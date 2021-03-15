@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Makefile简介在软件开发中，make通常被视为一种软件构建工具。该工具主要经由读取一种名为“makefile”或“Makefile”的文件来实现软件的自动化建构。它会通过一种被称之为“target”概念来检查相关文件之间的依赖关系，这种依赖关系的检查系统非常简单，主要通过对比文件的修改时间来实现。在大多数情况下，我们主要用它来编译源代码，生成结果代码，然后把结果代码连接起来生成可执行文件或者">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Makefile简易教程">
+<meta property="og:url" content="http://yoursite.com/2021/01/17/Makefile%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/index.html">
+<meta property="og:site_name" content="jxlxy1995&#39;s blog">
+<meta property="og:description" content="Makefile简介在软件开发中，make通常被视为一种软件构建工具。该工具主要经由读取一种名为“makefile”或“Makefile”的文件来实现软件的自动化建构。它会通过一种被称之为“target”概念来检查相关文件之间的依赖关系，这种依赖关系的检查系统非常简单，主要通过对比文件的修改时间来实现。在大多数情况下，我们主要用它来编译源代码，生成结果代码，然后把结果代码连接起来生成可执行文件或者">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-01-17T14:10:11.000Z">
+<meta property="article:modified_time" content="2021-02-01T16:02:57.421Z">
+<meta property="article:author" content="jxlxy1995">
+<meta property="article:tag" content="Makefile">
+<meta property="article:tag" content="cpp">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/01/17/Makefile%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Makefile简易教程 | jxlxy1995's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">jxlxy1995's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/01/17/Makefile%E7%AE%80%E6%98%93%E6%95%99%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="jxlxy1995">
+      <meta itemprop="description" content="have a nice day!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="jxlxy1995's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Makefile简易教程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2021-01-17 22:10:11" itemprop="dateCreated datePublished" datetime="2021-01-17T22:10:11+08:00">2021-01-17</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-02-02 00:02:57" itemprop="dateModified" datetime="2021-02-02T00:02:57+08:00">2021-02-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">开发工具</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Makefile简介"><a href="#Makefile简介" class="headerlink" title="Makefile简介"></a>Makefile简介</h1><p>在软件开发中，make通常被视为一种软件构建工具。该工具主要经由读取一种名为“makefile”或“Makefile”的文件来实现软件的自动化建构。它会通过一种被称之为“target”概念来检查相关文件之间的依赖关系，这种依赖关系的检查系统非常简单，主要通过对比文件的修改时间来实现。在大多数情况下，我们主要用它来编译源代码，生成结果代码，然后把结果代码连接起来生成可执行文件或者库文件。</p>
+<a id="more"></a>
+
+<h1 id="编写一个最简单的Makefile"><a href="#编写一个最简单的Makefile" class="headerlink" title="编写一个最简单的Makefile"></a>编写一个最简单的Makefile</h1><p>比如我们现在有main.cpp、func.cpp、func.h这么三个源代码文件。正常情况下我们是这样编译的（假设最后生成的目标程序叫prog）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">g++ -o prog main.cpp func.cpp</span><br></pre></td></tr></table></figure>
+<p>如果没有makefile，在开发+调试程序的过程中，我们就需要不断地重复输入上面这条编译命令，要不就是通过终端的历史功能不停地按上下键来寻找最近执行过的命令。这样做两个缺陷：</p>
+<ol>
+<li>一旦终端历史记录被丢失，我们就不得不从头开始；</li>
+<li>任何时候只要我们修改了其中一个文件，上述编译命令就会重新编译所有的文件，当文件足够多时这样的编译会非常耗时。</li>
+</ol>
+<p>那么Makefile又能做什么呢？我们先来看一个最简单的makefile文件：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">prog: main.cpp func.cpp</span></span><br><span class="line">    g++ -o prog main.cpp func.cpp</span><br></pre></td></tr></table></figure>
+<p>以上就是一个最基本的Makefile语句，它主要分成了三个部分：第一行冒号之前的prog，我们称之为目标（target），被认为是这条语句所要处理的对象，具体到这里就是我们所要编译的这个程序calc。冒号后面的部分（main.cpp func.cpp），我们称之为依赖关系表，也就是编译calc所需要的文件，<strong>这些文件只要有一个发生了变化</strong>，就会触发该语句的第三部分，我们称其为命令部分，相信你也看得出这就是一条编译命令。现在我们只要将上面这两行语句写入一个名为Makefile或者makefile的文件，然后在终端中输入make命令，就会看到它按照我们的设定去编译程序了。</p>
+<blockquote>
+<p>注意，在第二行的“g++”命令之前必须要有一个tab缩进。语法规定Makefile中的任何命令之前都必须要有一个tab缩进，否则make就会报错。</p>
+</blockquote>
+<p>接下来，让我们来解决一下效率方面的问题，先初步修改一下上面的代码：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">CXX = g++</span><br><span class="line">TARGET = prog</span><br><span class="line">SOURCE = main.cpp func.cpp</span><br><span class="line"> </span><br><span class="line"><span class="variable">$(TARGET)</span>: <span class="variable">$(SOURCE)</span></span><br><span class="line">    <span class="variable">$(CXX)</span> -o <span class="variable">$(TARGET)</span> <span class="variable">$(SOURCE)</span></span><br></pre></td></tr></table></figure>
+<p>我们在上述代码中定义了三个常量CXX、TARGET以及SOURCE。它们分别告诉了make我们要使用的编译器、要编译的目标以及源文件。这样一来，今后我们要修改这三者中的任何一项，只需要修改常量的定义即可，而不用再去管后面的代码部分了。</p>
+<p>但我们现在依然还是没能解决当我们只修改一个文件时就要全部重新编译的问题。而且如果我们修改的是func.h文件，make就无法察觉到变化了（所以有必要为头文件专门设置一个变量，并将其加入到依赖关系表中）。下面，我们来想一想如何解决这个问题。考虑到在标准的编译过程中，<strong>源文件往往是先被编译成目标文件，然后再由目标文件连接成可执行文件的</strong>。我们可以利用这一点来调整一下这些文件之间的依赖关系：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">CXX = g++</span><br><span class="line">TARGET = prog</span><br><span class="line">DEPS = func.h</span><br><span class="line">OBJ = main.o func.o</span><br><span class="line"> </span><br><span class="line"><span class="variable">$(TARGET)</span>: <span class="variable">$(SOURCE)</span></span><br><span class="line">    <span class="variable">$(CXX)</span> -o <span class="variable">$(TARGET)</span> <span class="variable">$(SOURCE)</span></span><br><span class="line"></span><br><span class="line"><span class="section">main.o: main.cpp <span class="variable">$(DEPS)</span></span></span><br><span class="line">    <span class="variable">$(CXX)</span> -c main.cpp</span><br><span class="line"></span><br><span class="line"><span class="section">func.o: func.cpp <span class="variable">$(DEPS)</span></span></span><br><span class="line">    <span class="variable">$(CXX)</span> -c func.cpp</span><br><span class="line">  </span><br></pre></td></tr></table></figure>
+<p>这样一来，上面的问题显然是解决了，但同时我们又让代码变得非常啰嗦，而且啰嗦往往伴随着低效率。经过再度观察，我们发现所有.cpp都会被编译成相同名称的.o文件。我们可以根据该特点再对其做进一步的简化：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CXX = g++</span><br><span class="line">TARGET = prog</span><br><span class="line">DEPS = func.h</span><br><span class="line">OBJ = main.o func.o</span><br><span class="line"></span><br><span class="line"><span class="variable">$(TARGET)</span>: <span class="variable">$(OBJ)</span></span><br><span class="line">    <span class="variable">$(CXX)</span> -o <span class="variable">$(TARGET)</span> <span class="variable">$(OBJ)</span></span><br><span class="line"></span><br><span class="line"><span class="section">%.o: %.c <span class="variable">$(DEPS)</span></span></span><br><span class="line">    <span class="variable">$(CXX)</span> -c <span class="variable">$&lt;</span> -o <span class="variable">$@</span></span><br></pre></td></tr></table></figure>
+<p>在这里，我们用到了几个特殊的宏。首先是%.o:%.c，这是一个模式规则，表示所有的.o目标都依赖于与它同名的.c文件（当然还有DEPS中列出的头文件）。再来就是命令部分的$&lt;和$@，其中$&lt;代表的是依赖关系表中的第一项（如果我们想引用的是整个关系表，那么就应该使用$^），具体到我们这里就是%.c。而$@代表的是当前语句的目标，即%.o。这样一来，make命令就会自动将所有的.c源文件编译成同名的.o文件。不用我们一项一项去指定了。整个代码自然简洁了许多。</p>
+<p>到目前为止，我们已经有了一个不错的makefile，至少用来维护这个小型工程是没有什么问题了。当然，如果要进一步增加上面这个项目的可扩展性，我们就会需要用到一些Makefile中的伪目标和函数规则了。例如，如果我们想增加自动清理编译结果的功能就可以为其定义一个带伪目标的规则，在上述语句后面追加：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="section">clean:</span></span><br><span class="line">    rm -rf <span class="variable">$(OBJ)</span> <span class="variable">$(TARGET)</span></span><br></pre></td></tr></table></figure>
+<p>当我们在终端中执行make clean命令时，它就会去删除该工程生成的所有编译文件。</p>
+<p>另外，如果我们需要往工程中添加一个.cpp或.h，可能同时就要再手动为obj常量再添加第一个.o文件，如果这列表很长，代码会非常难看，为此，我们需要用到Makefile中的函数，这里我们演示两个：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">CXX = g++</span><br><span class="line">TARGET = prog</span><br><span class="line">DEPS = <span class="variable">$(<span class="built_in">shell</span> find ./ -name &quot;*.h&quot;)</span></span><br><span class="line">SRC = <span class="variable">$(<span class="built_in">shell</span> find ./ -name &quot;*.cpp&quot;)</span></span><br><span class="line">OBJ = $(SRC:%.cpp=%.o) </span><br><span class="line"></span><br><span class="line"><span class="variable">$(TARGET)</span>: <span class="variable">$(OBJ)</span></span><br><span class="line">    <span class="variable">$(CXX)</span> -o <span class="variable">$(TARGET)</span> <span class="variable">$(OBJ)</span></span><br><span class="line"></span><br><span class="line"><span class="section">%.o: %.c <span class="variable">$(DEPS)</span></span></span><br><span class="line">    <span class="variable">$(CXX)</span> -c <span class="variable">$&lt;</span> -o <span class="variable">$@</span></span><br><span class="line">    </span><br><span class="line"><span class="section">clean:</span></span><br><span class="line">    rm -rf <span class="variable">$(OBJ)</span> <span class="variable">$(TARGET)</span></span><br></pre></td></tr></table></figure>
+<p>其中，shell函数主要用于执行shell命令，具体到这里就是找出当前目录下所有的.cpp和.h文件。而$(src:%.cpp=%.o)则是一个字符替换函数，它会将src所有的.cpp字串替换成.o，实际上就等于列出了所有.c文件要编译的结果。有了这两个设定，无论我们今后在该工程加入多少.c和.h文件，Makefile都能自动将其纳入到工程中来。</p>
+<h1 id="Makefile中引入第三方库写法"><a href="#Makefile中引入第三方库写法" class="headerlink" title="Makefile中引入第三方库写法"></a>Makefile中引入第三方库写法</h1><p>上面仅限于我们自己编写几个文件时的小工程使用，日常工作学习当中我们必然要使用大量第三方库，毕竟github上有着众多优质轮子，可以选择自己需要的来使用。</p>
+<p>比如上一篇文章就说到了yaml-cpp，那么我们这次使用这个库作为演示。</p>
+<p>假设在各个那个背景下，我们需要引入yaml-cpp库。那么我们知道，引入一个库可以使用静态库或者动态库（后面有机会可以总结下两者的区别）。这里使用动态库，在win平台下是.dll文件，linux下是.so文件。以及我们还需要include这个库的头文件（若干个）。那么我们在Makefile文件中加入这两个目录</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ROOT_DIR := ../../</span><br><span class="line">INC_DIR := <span class="variable">$(ROOT_DIR)</span>thirdlib/<span class="keyword">include</span></span><br><span class="line">LIB_DIR := <span class="variable">$(ROOT_DIR)</span>thirdlib/lib</span><br></pre></td></tr></table></figure>
+<p>INC_DIR和LIB_DIR分别代表存放yaml的头文件和.so文件的目录(ROOT_DIR是整个项目根目录，每个人放工程目录不一样，理解即可)。那么我们把他们加入到我们的编译选项当中，如下</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">LD_LIBS := yaml-cpp</span><br><span class="line">CXXFLAGS := -ggdb</span><br><span class="line">CXXFLAGS += <span class="variable">$(<span class="built_in">addprefix</span> -I, <span class="variable">$(INC_DIR)</span>)</span></span><br><span class="line">LDFLAGS  := <span class="variable">$(<span class="built_in">addprefix</span> -L,<span class="variable">$(LIB_DIR)</span>)</span> <span class="variable">$(<span class="built_in">addprefix</span> -l,<span class="variable">$(LD_LIBS)</span>)</span></span><br><span class="line"></span><br><span class="line"><span class="variable">$(TARGET)</span>: <span class="variable">$(OBJ)</span></span><br><span class="line">	<span class="variable">$(CXX)</span> -o <span class="variable">$(TARGET)</span> <span class="variable">$(CXXFLAGS)</span> <span class="variable">$(OBJ)</span> <span class="variable">$(LDFLAGS)</span></span><br></pre></td></tr></table></figure>
+<p>我们看到最后的编译命令在obj前面加了CXXFLAGS，也就是c++编译选项，这里就有刚刚的INC_DIR（如果有其他需要括进去的头文件目录也可以加进去，-ggdb是代表生成可供gdb是用的信息，使用-g也是类似的效果，但两者有细微的差别，一般更倾向于使用前者也就是-ggdb)。</p>
+<p>LDFLAGS代表我们需要引入的库名，其中有两个命令参数，**-L** 指定库的路径 <strong>-l</strong> 指定需连接的库名。也就是上面的$(ROOT_DIR)thirdlib/include和yaml-cpp。</p>
+<p>这样我们能在工程下任意文件里调用yaml-cpp的内容了，调用时加上<code>#include &quot;yaml-cpp/yaml.h&quot;</code>即可。</p>
+<p>以上就是在工程中引入yaml-cpp需要对Makefile文件进行修改的简单总结了，后续这篇文章可能还会更新一些更细节的内容。诸如Makefile更优化的写法，gcc一些命令参数的对比或者备忘等等。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/jiafu1115/article/details/8842240">gcc -I -L -l区别</a></p>
+<p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/skying555/p/10278810.html">Makefile简易教程</a></p>
+<p><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Make">中文维基百科</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Makefile/" rel="tag"># Makefile</a>
+              <a href="/tags/cpp/" rel="tag"># cpp</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/01/17/yaml-cpp%E4%BD%BF%E7%94%A8%E5%A4%87%E5%BF%98/" rel="prev" title="yaml-cpp使用备忘">
+      <i class="fa fa-chevron-left"></i> yaml-cpp使用备忘
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/01/26/linux%E4%B8%8BSocket%E7%BC%96%E7%A8%8B/" rel="next" title="linux下Socket编程">
+      linux下Socket编程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81MjQyNS8yODkwMw=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Makefile%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">Makefile简介</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BC%96%E5%86%99%E4%B8%80%E4%B8%AA%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84Makefile"><span class="nav-number">2.</span> <span class="nav-text">编写一个最简单的Makefile</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Makefile%E4%B8%AD%E5%BC%95%E5%85%A5%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E5%86%99%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">Makefile中引入第三方库写法</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">4.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jxlxy1995"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">jxlxy1995</p>
+  <div class="site-description" itemprop="description">have a nice day!</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jxlxy1995</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>

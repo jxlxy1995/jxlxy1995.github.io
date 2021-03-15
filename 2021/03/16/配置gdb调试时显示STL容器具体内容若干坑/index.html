@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="上周四工作时领导发现我用户目录下的gdb竟然不能在调试时正常打印stl容器中的内容，然后在我目录下加了一份.gdbinit文件，内容很简单只有一行,如下。 1set auto-load safe-path &#x2F;  然后就可以了，但后面我在自己云主机上也照做后，发现并不管用，于是开始一系列的尝试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="配置gdb调试时显示STL容器具体内容若干坑">
+<meta property="og:url" content="http://yoursite.com/2021/03/16/%E9%85%8D%E7%BD%AEgdb%E8%B0%83%E8%AF%95%E6%97%B6%E6%98%BE%E7%A4%BASTL%E5%AE%B9%E5%99%A8%E5%85%B7%E4%BD%93%E5%86%85%E5%AE%B9%E8%8B%A5%E5%B9%B2%E5%9D%91/index.html">
+<meta property="og:site_name" content="jxlxy1995&#39;s blog">
+<meta property="og:description" content="上周四工作时领导发现我用户目录下的gdb竟然不能在调试时正常打印stl容器中的内容，然后在我目录下加了一份.gdbinit文件，内容很简单只有一行,如下。 1set auto-load safe-path &#x2F;  然后就可以了，但后面我在自己云主机上也照做后，发现并不管用，于是开始一系列的尝试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-03-15T16:16:27.000Z">
+<meta property="article:modified_time" content="2021-03-15T17:35:21.604Z">
+<meta property="article:author" content="jxlxy1995">
+<meta property="article:tag" content="gdb">
+<meta property="article:tag" content="linux">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2021/03/16/%E9%85%8D%E7%BD%AEgdb%E8%B0%83%E8%AF%95%E6%97%B6%E6%98%BE%E7%A4%BASTL%E5%AE%B9%E5%99%A8%E5%85%B7%E4%BD%93%E5%86%85%E5%AE%B9%E8%8B%A5%E5%B9%B2%E5%9D%91/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>配置gdb调试时显示STL容器具体内容若干坑 | jxlxy1995's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">jxlxy1995's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/03/16/%E9%85%8D%E7%BD%AEgdb%E8%B0%83%E8%AF%95%E6%97%B6%E6%98%BE%E7%A4%BASTL%E5%AE%B9%E5%99%A8%E5%85%B7%E4%BD%93%E5%86%85%E5%AE%B9%E8%8B%A5%E5%B9%B2%E5%9D%91/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="jxlxy1995">
+      <meta itemprop="description" content="have a nice day!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="jxlxy1995's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          配置gdb调试时显示STL容器具体内容若干坑
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-03-16 00:16:27 / 修改时间：01:35:21" itemprop="dateCreated datePublished" datetime="2021-03-16T00:16:27+08:00">2021-03-16</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7/" itemprop="url" rel="index"><span itemprop="name">开发工具</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>上周四工作时领导发现我用户目录下的gdb竟然不能在调试时正常打印stl容器中的内容，然后在我目录下加了一份.gdbinit文件，内容很简单只有一行,如下。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set auto-load safe-path / </span><br></pre></td></tr></table></figure>
+<p>然后就可以了，但后面我在自己云主机上也照做后，发现并不管用，于是开始一系列的尝试。</p>
+<a id="more"></a>
+
+<h1 id="gdb版本更新"><a href="#gdb版本更新" class="headerlink" title="gdb版本更新"></a>gdb版本更新</h1><p>一开始我看工作环境gdb版本为9.2版本，我自己的机器上的是7.6版本，那么是不是版本原因呢？先更新试试！</p>
+<h2 id="下载更新新版本GDB"><a href="#下载更新新版本GDB" class="headerlink" title="下载更新新版本GDB"></a>下载更新新版本GDB</h2><p>先去<a target="_blank" rel="noopener" href="http://ftp.gnu.org/gnu/gdb/">gdb官网</a> 下载新版本的gdb源码，然后发现最新的是10.1版本，那就10.1好了。</p>
+<p>下载好源码解压后，在gdb-10.1目录下新建一个build目录，然后执行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">../configure</span><br></pre></td></tr></table></figure>
+<p>在build目录生成makefile，之后<code>make</code>然后<code>make install</code>即可，非root用户记得加上<code>sudo</code>。执行<code>gdb --version</code>即可查看到机器上的gdb版本变更为10.1了。</p>
+<p>然后再试试，发现果然并不行- -。</p>
+<h1 id="Python脚本支持？"><a href="#Python脚本支持？" class="headerlink" title="Python脚本支持？"></a>Python脚本支持？</h1><p>之后在网上一直查，发现7.0版本后的gdb打印stl容器功能其实是<code>pretty-printer</code>这个python脚本来提供的。通过在gdb中<code>info pretty-printer</code>查看是否有该脚本支持，尝试查看，果然没有。</p>
+<h2 id="设置pretty-printer"><a href="#设置pretty-printer" class="headerlink" title="设置pretty-printer"></a>设置pretty-printer</h2><p>方法如下:</p>
+<ol>
+<li><p>获得python脚本，建议使用gcc默认安装的</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo find &#x2F; -name &quot;*libstdcxx*&quot;</span><br></pre></td></tr></table></figure></li>
+<li><p>若本机查找不到python脚本，建议下载gcc对应版本源码包，相对目录如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc-4.8.1&#x2F;libstdc++-v3&#x2F;python</span><br></pre></td></tr></table></figure></li>
+<li><p>也可直接下载最新版本</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">svn co svn:&#x2F;&#x2F;gcc.gnu.org&#x2F;svn&#x2F;gcc&#x2F;trunk&#x2F;libstdc++-v3&#x2F;python</span><br></pre></td></tr></table></figure></li>
+<li><p>将如下代码添加到.gdbinit文件中（我自己的机器搜出来该python脚本位于 <code>/usr/local/gcc/share/gcc-9.2.0/python/</code> 下，但是由于我的机器装东西装的比较乱，可能不止这一个目录有。。。）</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">python</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line">sys.path.insert(<span class="number">0</span>, <span class="string">&#x27;/usr/local/gcc/share/gcc-9.2.0/python&#x27;</span>)</span><br><span class="line"><span class="keyword">from</span> libstdcxx.v6.printers <span class="keyword">import</span> register_libstdcxx_printers</span><br><span class="line">register_libstdcxx_printers (<span class="literal">None</span>)</span><br><span class="line">end</span><br></pre></td></tr></table></figure>
+<p>设置好了在用户根目录<code>.gdbinit</code>文件中填入该脚本，直接在启动gdb时就报出了一个警告。完整的英文语句我有点忘记了，但意思是这个版本的gdb不支持python。</p>
+</li>
+</ol>
+<p>不支持python？这怎么可能，我搜出来的结果基本都是指向该功能需要由python来支持。</p>
+<h1 id="重新配置编译gdb源码"><a href="#重新配置编译gdb源码" class="headerlink" title="重新配置编译gdb源码"></a>重新配置编译gdb源码</h1><p>经尝试，<code>gdb10.1</code>（包括<code>9.2</code>）直接<code>../configure</code>是默认不会支持python功能的，我去啊= =。行吧那么重新来一遍</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">../configure --with-python=&quot;/usr/bin&quot;</span><br></pre></td></tr></table></figure>
+<p>配置makefile文件时加上这个选项，路径为主机上python所在的目录。再次编译安装后，进入gdb界面，发现那条报错没有了！</p>
+<h1 id="成功打印！"><a href="#成功打印！" class="headerlink" title="成功打印！"></a>成功打印！</h1><p>令人高兴的是，加上python编译选项后gdb正确的打印出了我想要的东西，样子如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p vec</span><br><span class="line"><span class="variable">$1</span> = std::vector of length 10, capacity 10 = &#123;0, 1, 2, 3, 4, 5, 6, 7, 8, 9&#125;</span><br></pre></td></tr></table></figure>
+<p>而原来是</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) p vec</span><br><span class="line"><span class="variable">$1</span> = &#123;&lt;std::_Vector_base&lt;int, std::allocator&lt;int&gt; &gt;&gt; = &#123;</span><br><span class="line">    _M_impl = &#123;&lt;std::allocator&lt;int&gt;&gt; = &#123;&lt;__gnu_cxx::new_allocator&lt;int&gt;&gt; = &#123;&lt;No data fields&gt;&#125;, &lt;No data fields&gt;&#125;, _M_start = 0x404010, _M_finish = 0x404038, </span><br><span class="line">          _M_end_of_storage = 0x404038&#125;&#125;, &lt;No data fields&gt;&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>虽然最后成功配置，但其实在这几天的踩坑中，还有很多细节可以记录</p>
+<h2 id="gdbinit中的那段导入python的代码是否是必要的"><a href="#gdbinit中的那段导入python的代码是否是必要的" class="headerlink" title=".gdbinit中的那段导入python的代码是否是必要的"></a>.gdbinit中的那段导入python的代码是否是必要的</h2><p>我在删掉那段代码后，再次尝试是否可以正常打印stl容器内容，发现还是正常的（试过vector和set），但是使用<code>info pretty-printer</code>查看，结果和之前不太一样了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">(gdb) info pretty-printer</span><br><span class="line">global pretty-printers:</span><br><span class="line">  <span class="built_in">builtin</span></span><br><span class="line">    mpx_bound128</span><br></pre></td></tr></table></figure>
+<p>比之前少了很多，而之前是</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">(gdb) info pretty-printer</span><br><span class="line">global pretty-printers:</span><br><span class="line">  <span class="built_in">builtin</span></span><br><span class="line">    mpx_bound128</span><br><span class="line">  libstdc++-v6</span><br><span class="line">    __gnu_cxx::_Slist_iterator</span><br><span class="line">    __gnu_cxx::__8::_Slist_iterator</span><br><span class="line">    __gnu_cxx::__8::__normal_iterator</span><br><span class="line">    __gnu_cxx::__8::slist</span><br><span class="line">    __gnu_cxx::__normal_iterator</span><br><span class="line">    __gnu_cxx::slist</span><br><span class="line">    __gnu_debug::_Safe_iterator</span><br><span class="line">    std::_Deque_const_iterator</span><br><span class="line">    std::_Deque_iterator</span><br><span class="line">    std::_Fwd_list_const_iterator</span><br><span class="line">    std::_Fwd_list_iterator</span><br><span class="line">    std::_List_const_iterator</span><br><span class="line">    std::_List_iterator</span><br><span class="line">    std::shared_ptr</span><br><span class="line">    std::stack</span><br><span class="line">    std::tr1::shared_ptr</span><br><span class="line">    std::tr1::unordered_map</span><br><span class="line">    std::tr1::unordered_multimap</span><br><span class="line">    std::tr1::unordered_multiset</span><br><span class="line">    std::tr1::unordered_set</span><br><span class="line">    std::tr1::weak_ptr</span><br><span class="line">    std::tuple</span><br><span class="line">    std::unique_ptr</span><br><span class="line">    std::unordered_map</span><br><span class="line">    std::unordered_multimap</span><br><span class="line">    std::unordered_multiset</span><br><span class="line">    std::unordered_set</span><br><span class="line">    std::variant</span><br><span class="line">    std::vector</span><br><span class="line">    std::weak_ptr</span><br></pre></td></tr></table></figure>
+<p>这个我没去仔细查，最后我选择留下了那段导入脚本。</p>
+<h2 id="我机器gdb所依赖的库很奇怪"><a href="#我机器gdb所依赖的库很奇怪" class="headerlink" title="我机器gdb所依赖的库很奇怪"></a>我机器gdb所依赖的库很奇怪</h2><p>首先通过如下命令查看一个软件在linux上所依赖的库</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">[root@VM_0_12_centos ~]<span class="comment"># which gdb</span></span><br><span class="line"><span class="built_in">alias</span> gdb=<span class="string">&#x27;gdb -q&#x27;</span></span><br><span class="line">        /usr/<span class="built_in">local</span>/bin/gdb</span><br><span class="line">[root@VM_0_12_centos ~]<span class="comment"># ldd /usr/local/bin/gdb</span></span><br><span class="line">        linux-vdso.so.1 =&gt;  (0x00007ffe6c781000)</span><br><span class="line">        libncursesw.so.5 =&gt; /lib64/libncursesw.so.5 (0x00007f239664d000)</span><br><span class="line">        libtinfo.so.5 =&gt; /lib64/libtinfo.so.5 (0x00007f2396423000)</span><br><span class="line">        libdl.so.2 =&gt; /lib64/libdl.so.2 (0x00007f239621f000)</span><br><span class="line">        libpython2.7.so.1.0 =&gt; /lib64/libpython2.7.so.1.0 (0x00007f2395e53000)</span><br><span class="line">        libpthread.so.0 =&gt; /lib64/libpthread.so.0 (0x00007f2395c37000)</span><br><span class="line">        libutil.so.1 =&gt; /lib64/libutil.so.1 (0x00007f2395a34000)</span><br><span class="line">        libm.so.6 =&gt; /lib64/libm.so.6 (0x00007f2395732000)</span><br><span class="line">        libexpat.so.1 =&gt; /lib64/libexpat.so.1 (0x00007f2395508000)</span><br><span class="line">        libstdc++.so.6 =&gt; /usr/<span class="built_in">local</span>/gcc/lib64/libstdc++.so.6 (0x00007f239512f000)</span><br><span class="line">        libgcc_s.so.1 =&gt; /usr/<span class="built_in">local</span>/gcc/lib64/libgcc_s.so.1 (0x00007f2394f17000)</span><br><span class="line">        libc.so.6 =&gt; /lib64/libc.so.6 (0x00007f2394b4a000)</span><br><span class="line">        /lib64/ld-linux-x86-64.so.2 (0x00007f2396885000)</span><br></pre></td></tr></table></figure>
+<p>其他都很正常，唯独这句</p>
+<blockquote>
+<p>libstdc++.so.6 =&gt; /usr/local/gcc/lib64/libstdc++.so.6 (0x00007f239512f000)</p>
+</blockquote>
+<p>我也是现在写才发现。。。已经变正常了，之前他索引的是一个ycm插件下自带的<code>libstdc++.so.6</code> ，这可能是gdb一开始没有索引默认gcc下的python脚本的原因（因为没报错）。在咨询过大佬同学后，让我查看机器的系统变量<code>LD_LIBRARY_PATH</code>，查询后发现就是那个错误的ycm地址。查询和修改语句</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$LD_LIBRARY_PATH</span></span><br><span class="line"><span class="built_in">export</span> LD_LIBRARY_PATH=/mypath</span><br></pre></td></tr></table></figure>
+<p>我先把它修改成空了，让软件先走系统默认的查询lib的路径。</p>
+<p>后续发现在根目录下的<code>.bashrc</code> 文件，最后一句export LD_LIBRARY_PATH = 那个奇怪的位置。也就是这句话导致该变量异常。</p>
+<p>在写这篇博文的时候才发现gdb所依赖的<code>libstdc++.so.6</code>库已经变成默认正常路径下的库了，难道linux软件依赖库是动态改变的？这一点后续可以确认考证下。</p>
+<h1 id="主要参考文章"><a href="#主要参考文章" class="headerlink" title="主要参考文章"></a>主要参考文章</h1><p><a target="_blank" rel="noopener" href="https://github.com/hellogcc/100-gdb-tips/blob/master/src/print-STL-container.md">打印STL容器中的内容</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/gdb/" rel="tag"># gdb</a>
+              <a href="/tags/linux/" rel="tag"># linux</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/10/%E5%BE%AE%E4%BF%A1%E6%8A%A2%E7%BA%A2%E5%8C%85%E5%88%86%E9%85%8D%E7%AE%97%E6%B3%95/" rel="prev" title="微信抢红包分配算法">
+      <i class="fa fa-chevron-left"></i> 微信抢红包分配算法
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81MjQyNS8yODkwMw=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#gdb%E7%89%88%E6%9C%AC%E6%9B%B4%E6%96%B0"><span class="nav-number">1.</span> <span class="nav-text">gdb版本更新</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD%E6%9B%B4%E6%96%B0%E6%96%B0%E7%89%88%E6%9C%ACGDB"><span class="nav-number">1.1.</span> <span class="nav-text">下载更新新版本GDB</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Python%E8%84%9A%E6%9C%AC%E6%94%AF%E6%8C%81%EF%BC%9F"><span class="nav-number">2.</span> <span class="nav-text">Python脚本支持？</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AEpretty-printer"><span class="nav-number">2.1.</span> <span class="nav-text">设置pretty-printer</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%87%8D%E6%96%B0%E9%85%8D%E7%BD%AE%E7%BC%96%E8%AF%91gdb%E6%BA%90%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">重新配置编译gdb源码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%88%90%E5%8A%9F%E6%89%93%E5%8D%B0%EF%BC%81"><span class="nav-number">4.</span> <span class="nav-text">成功打印！</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">总结</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#gdbinit%E4%B8%AD%E7%9A%84%E9%82%A3%E6%AE%B5%E5%AF%BC%E5%85%A5python%E7%9A%84%E4%BB%A3%E7%A0%81%E6%98%AF%E5%90%A6%E6%98%AF%E5%BF%85%E8%A6%81%E7%9A%84"><span class="nav-number">5.1.</span> <span class="nav-text">.gdbinit中的那段导入python的代码是否是必要的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%88%91%E6%9C%BA%E5%99%A8gdb%E6%89%80%E4%BE%9D%E8%B5%96%E7%9A%84%E5%BA%93%E5%BE%88%E5%A5%87%E6%80%AA"><span class="nav-number">5.2.</span> <span class="nav-text">我机器gdb所依赖的库很奇怪</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%BB%E8%A6%81%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">6.</span> <span class="nav-text">主要参考文章</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jxlxy1995"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">jxlxy1995</p>
+  <div class="site-description" itemprop="description">have a nice day!</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">9</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jxlxy1995</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>
