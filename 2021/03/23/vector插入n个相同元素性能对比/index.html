@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="写了一段测试程序对比插入n个相同元素到一个vector中消耗的时间，顺便总结一些相关概念。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vector插入n个相同元素性能对比">
+<meta property="og:url" content="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/index.html">
+<meta property="og:site_name" content="jxlxy1995&#39;s blog">
+<meta property="og:description" content="写了一段测试程序对比插入n个相同元素到一个vector中消耗的时间，顺便总结一些相关概念。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323221746893.png">
+<meta property="og:image" content="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323223319526.png">
+<meta property="og:image" content="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323224953990.png">
+<meta property="og:image" content="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323231146512.png">
+<meta property="article:published_time" content="2021-03-23T13:33:55.000Z">
+<meta property="article:modified_time" content="2021-03-23T15:28:03.058Z">
+<meta property="article:author" content="jxlxy1995">
+<meta property="article:tag" content="数据结构与算法">
+<meta property="article:tag" content="cpp">
+<meta property="article:tag" content="stl">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323221746893.png">
+
+<link rel="canonical" href="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>vector插入n个相同元素性能对比 | jxlxy1995's blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">jxlxy1995's blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="jxlxy1995">
+      <meta itemprop="description" content="have a nice day!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="jxlxy1995's blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          vector插入n个相同元素性能对比
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2021-03-23 21:33:55 / 修改时间：23:28:03" itemprop="dateCreated datePublished" datetime="2021-03-23T21:33:55+08:00">2021-03-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/STL/" itemprop="url" rel="index"><span itemprop="name">STL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>写了一段测试程序对比插入n个相同元素到一个vector中消耗的时间，顺便总结一些相关概念。</p>
+<a id="more"></a>
+
+<h1 id="插入相同元素测试代码"><a href="#插入相同元素测试代码" class="headerlink" title="插入相同元素测试代码"></a>插入相同元素测试代码</h1><p>代码如下</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;int32&gt; vec1,vec2,vec3,vec4,vec5;</span><br><span class="line">int32 count = <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line">uint64 startTick = <span class="number">0</span>;</span><br><span class="line">uint64 endTick = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;push back:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec1.push_back(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;emplace back:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec2.emplace_back(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;resize:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec3.resize(count);</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec3[i] = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;reserve:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec4.reserve(count);</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec4[i] = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;resize with value:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec5.resize(count, <span class="number">1</span>);</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">CTS::printfVec(vec1);</span><br><span class="line">CTS::printfVec(vec2);</span><br><span class="line">CTS::printfVec(vec3);</span><br><span class="line">CTS::printfVec(vec4);</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;vec4 size = &quot;</span> &lt;&lt; vec4.size() &lt;&lt; <span class="string">&quot; cap = &quot;</span> &lt;&lt; vec4.capacity() &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">CTS::printfVec(vec5);</span><br></pre></td></tr></table></figure>
+<p>以上5个vector分别用五种不同的方式插入count个相同元素，要注意的vec是已初始化过的。如果是未初始化的容器本身vector就有初始n个相同元素的构造函数，如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">vec</span><span class="params">(n, m)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>意为，初始化包含n个值为m的vec。</p>
+<p>回到上面代码，5个vector插入元素的方法分别为：</p>
+<ol>
+<li>调用count次<code>push_back</code>函数</li>
+<li>调用count次<code>emplace_back</code>函数</li>
+<li>使用resize函数申请count个元素大小内存，在通过下标赋值</li>
+<li>使用reserve函数申请count个元素大小内存，在通过下标赋值</li>
+<li>使用resize函数申请count个元素大小内存同时使用其第二个参数赋上初始值</li>
+</ol>
+<p>在count较小的情况下，五种方法基本上没有区别，当count值很大时，时间上就会有着较大的差别，如下：</p>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323221746893.png" class="" title="image-20210323221746893">
+
+<p>以上结果为count为一千万时的结果，时间单位为秒。</p>
+<p>可以看出，时间效率从上到下是越来越高的。</p>
+<p>所以，首先得到结果，<strong>这个问题本身的答案是使用第五种方法，即使用带初始化值的resize函数</strong></p>
+<p>しかし（但是，发音西噶西，哈哈哈哈）！其实上面的五种方法中，<strong>第四种方法其实是不能完成我们的需求的</strong>，如果代码count为5，打印结果是：</p>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323223319526.png" class="" title="image-20210323223319526">
+
+<p>vec4是没有元素被打印出来的，并且下方我打印出了它的<code>size()</code>和<code>capacity()</code>，那么这两者包括这两个函数有什么区别呢？下面来简单对比一下。</p>
+<h1 id="vector的resize-，reserve-，size-和capacity"><a href="#vector的resize-，reserve-，size-和capacity" class="headerlink" title="vector的resize()，reserve()，size()和capacity()"></a>vector的resize()，reserve()，size()和capacity()</h1><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><ol>
+<li><p>capacity</p>
+<p>指容器在分配新的存储空间之前能存储的元素总数。</p>
+</li>
+<li><p>size</p>
+<p>指当前容器所存储的元素个数</p>
+</li>
+</ol>
+<p>即capacity是容器可存储的最大总数，size是当前容器存储的个数。这样就比较明白了，至于两者之间差值的那些元素是什么情况，后续来说。可以先认为是未被初始化。</p>
+<ol>
+<li><p>resize<br>既分配了空间，也创建了对象。</p>
+<p>这里空间就是capacity，对象就是容器中的元素。</p>
+</li>
+<li><p>reserve<br>reserve()表示容器预留空间，但不是真正的创建对象，需要通过insert()或push_back()等操作创建对象。</p>
+</li>
+</ol>
+<p>其实size()和capacity()没有更多需要介绍的地方，大家平时coding时直接调用即可。当然size()的使用频率相当高，通常进行遍历操作时，最外层的for循环的次数即为size()。</p>
+<h2 id="resize和reverse区别"><a href="#resize和reverse区别" class="headerlink" title="resize和reverse区别"></a>resize和reverse区别</h2><ol>
+<li>reserve()只修改capacity大小，不修改size大小；</li>
+<li>resize()既修改capacity大小，也修改size大小。</li>
+</ol>
+<p>有如下示例代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; a;</span><br><span class="line"></span><br><span class="line">a.reserve(<span class="number">100</span>);</span><br><span class="line">a.resize(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.resize(<span class="number">150</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.reserve(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.resize(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br></pre></td></tr></table></figure>
+<p>结果如下：</p>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323224953990.png" class="" title="image-20210323224953990">
+
+<p>可以看出，和如上所说的一样。且最后一个操作表明，resize一个原来capacity更大的vector时，capacity不会被缩小，只有size会被resize所修改。</p>
+<p>还有一种实验，我们一直<code>push_back</code>count个元素一直打印这两个值，会发现，部分情况下size等于capacity，但大部分情况下capacity会大于size。这也是因为vector动态分配空间所导致的。那么这样刚好说下为什么，最上面代码使用<code>push_back</code>和<code>emplace_back</code>效率远低于<code>resize</code>的原因。</p>
+<h2 id="push-back过程"><a href="#push-back过程" class="headerlink" title="push_back过程"></a>push_back过程</h2><p>push_back是向容器vec尾部插入一个元素，如果此时size小于cap，则直接插入即可。如果此时size已经等于cap，那么STL会重新申请一块两倍于此时cap容量的连续内存，先将之前的内存拷贝到此处，再在其尾部插入这个新元素。所以，从零开始一个一个插入元素势必会进行巨量的这个过程，也就带来了大量的时间花销。</p>
+<p>此外，对于vector每次扩容是否是两倍的这个说法，网上也有些不同的说法，在此不细究，我自己试验下来，小数目情况下确实是两倍。非两倍情况可能是STL版本或者数量大的情况不一样。附测试代码和结果，环境为<code>linux</code>+<code>gcc9.2</code></p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; vec6;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; ++i)&#123;</span><br><span class="line">    vec6.push_back(i);</span><br><span class="line">    <span class="built_in">cout</span>&lt;&lt; <span class="string">&quot;size: &quot;</span> &lt;&lt;vec6.size()&lt;&lt;<span class="string">&quot;  cap: &quot;</span>&lt;&lt;vec6.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323231146512.png" class="" title="image-20210323231146512">
+
+<h2 id="emplace-back-和push-back-的区别"><a href="#emplace-back-和push-back-的区别" class="headerlink" title="emplace_back()和push_back()的区别"></a>emplace_back()和push_back()的区别</h2><p>上面代码第一第二种方法虽然差距很小，但仍然还是有一点细微的时间差距。在此也记录一下这两者之间的区别。</p>
+<p><strong>对于最终结果来说，这两个函数是一样的，都是将一个元素插入到容器最后。</strong></p>
+<p>其中<code>emplace_back()</code>函数是C++11新增加的，那么既然功能完全一样，C++11引入它的原因是什么呢。</p>
+<p><code>emplace_back()</code> 和 <code>push_back()</code> 的区别，就在于底层实现的机制不同。<code>push_back()</code> 向容器尾部添加元素时，首先会创建这个元素，然后再将这个元素拷贝或者移动到容器中（如果是拷贝的话，事后会自行销毁先前创建的这个元素）；而 emplace_back() 在实现时，则是直接在容器尾部创建这个元素，省去了拷贝或移动元素的过程。有如下代码：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt; </span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt; </span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">testDemo</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    testDemo(<span class="keyword">int</span> num):num(num)&#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    testDemo(<span class="keyword">const</span> testDemo&amp; other) :num(other.num) &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用拷贝构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    testDemo(testDemo&amp;&amp; other) :num(other.num) &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用移动构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">int</span> num;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;emplace_back:&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;testDemo&gt; demo1;</span><br><span class="line">    demo1.emplace_back(<span class="number">2</span>);  </span><br><span class="line"></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;push_back:&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;testDemo&gt; demo2;</span><br><span class="line">    demo2.push_back(<span class="number">2</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">emplace_back:</span><br><span class="line">调用构造函数</span><br><span class="line">push_back:</span><br><span class="line">调用构造函数</span><br><span class="line">调用移动构造函数</span><br></pre></td></tr></table></figure>
+<p>在此基础上，尝试将 testDemo 类中的移动构造函数注释掉，再运行程序会发现，运行结果变为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">emplace_back:</span><br><span class="line">调用构造函数</span><br><span class="line">push_back:</span><br><span class="line">调用构造函数</span><br><span class="line">调用拷贝构造函数</span><br></pre></td></tr></table></figure>
+<p>由此可以看出，push_back() 在底层实现时，会优先选择调用移动构造函数，如果没有才会调用拷贝构造函数。</p>
+<p>显然完成同样的操作，push_back() 的底层实现过程比 emplace_back() 更繁琐，换句话说，emplace_back() 的执行效率比 push_back() 高。<strong>因此，在实际使用时，建议优先选用emplace_back()。</strong></p>
+<p>但是，由于 emplace_back() 是 C++ 11 标准新增加的，如果程序要兼顾之前的版本，还是应该使用 push_back()。且对于基础类型或者内容很小的类来说，这两者也不会带来太大的性能差异。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a target="_blank" rel="noopener" href="http://c.biancheng.net/view/6826.html">C++ STL vector添加元素（push_back()和emplace_back()）详解</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%E4%B8%8E%E7%AE%97%E6%B3%95/" rel="tag"># 数据结构与算法</a>
+              <a href="/tags/cpp/" rel="tag"># cpp</a>
+              <a href="/tags/stl/" rel="tag"># stl</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/16/%E9%85%8D%E7%BD%AEgdb%E8%B0%83%E8%AF%95%E6%97%B6%E6%98%BE%E7%A4%BASTL%E5%AE%B9%E5%99%A8%E5%85%B7%E4%BD%93%E5%86%85%E5%AE%B9%E8%8B%A5%E5%B9%B2%E5%9D%91/" rel="prev" title="配置gdb调试时显示STL容器具体内容若干坑">
+      <i class="fa fa-chevron-left"></i> 配置gdb调试时显示STL容器具体内容若干坑
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="lv-container" data-id="city" data-uid="MTAyMC81MjQyNS8yODkwMw=="></div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%8F%92%E5%85%A5%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81"><span class="nav-number">1.</span> <span class="nav-text">插入相同元素测试代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#vector%E7%9A%84resize-%EF%BC%8Creserve-%EF%BC%8Csize-%E5%92%8Ccapacity"><span class="nav-number">2.</span> <span class="nav-text">vector的resize()，reserve()，size()和capacity()</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="nav-number">2.1.</span> <span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#resize%E5%92%8Creverse%E5%8C%BA%E5%88%AB"><span class="nav-number">2.2.</span> <span class="nav-text">resize和reverse区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#push-back%E8%BF%87%E7%A8%8B"><span class="nav-number">2.3.</span> <span class="nav-text">push_back过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#emplace-back-%E5%92%8Cpush-back-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.4.</span> <span class="nav-text">emplace_back()和push_back()的区别</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">3.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="jxlxy1995"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">jxlxy1995</p>
+  <div class="site-description" itemprop="description">have a nice day!</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2017 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">jxlxy1995</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script size="300" alpha="0.6" zIndex="-1" src="/lib/canvas-ribbon/canvas-ribbon.js"></script>
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+NexT.utils.loadComments(document.querySelector('#lv-container'), () => {
+  window.livereOptions = {
+    refer: location.pathname.replace(CONFIG.root, '').replace('index.html', '')
+  };
+  (function(d, s) {
+    var j, e = d.getElementsByTagName(s)[0];
+    if (typeof LivereTower === 'function') { return; }
+    j = d.createElement(s);
+    j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
+    j.async = true;
+    e.parentNode.insertBefore(j, e);
+  })(document, 'script');
+});
+</script>
+
+</body>
+</html>
