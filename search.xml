@@ -1,6 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>全排列简介</title>
+    <url>/2020/11/07/%E5%85%A8%E6%8E%92%E5%88%97%E7%AE%80%E4%BB%8B/</url>
+    <content><![CDATA[<p>最近打算把印象笔记记的笔记慢慢地写成博客的形式归档起来，也算是给自己的一个督促。  </p>
+<h2 id="1-基础概念"><a href="#1-基础概念" class="headerlink" title="1.基础概念"></a>1.基础概念</h2><p>这个概念最早接触是在高中时学oi在那本老旧的竞赛书上接触到的。抛出的问题类似于</p>
+<blockquote>
+<p>写一个函数, 如 Foo(const char *str), 打印出 str 的全排列, 如 abc 的全排列: abc, acb, bca, dac, cab, cba。。  </p>
+</blockquote>
+<p>排列和组合的区别就在于是否是有顺序的，全排列从字面上的意思就是列出所有元素的排列，其实这个直观的理解是没有错的。不过还是查一下网上的定义。</p>
+<blockquote>
+<p>从n个不同元素中任取m（m≤n）个元素，按照一定的顺序排列起来，叫做从n个不同元素中取出m个元素的一个排列。当m=n时所有的排列情况叫全排列。<br>公式：全排列数f(n)=n!(定义0!=1)</p>
+</blockquote>
+<p>以上就可以大概了解全排列是个什么东西了。那么直接上一版最简单的通过递归实现的全排列代码。</p>
+<a id="more"></a>
+
+<h2 id="2-全排列递归实现方式"><a href="#2-全排列递归实现方式" class="headerlink" title="2.全排列递归实现方式"></a>2.全排列递归实现方式</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; ans;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">allRange</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> len = nums.size();</span><br><span class="line">		<span class="keyword">if</span> (k == len - <span class="number">1</span>) &#123;</span><br><span class="line">			ans.push_back(nums);</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = k; i &lt; len; ++i) &#123;</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">				allRange(nums, k + <span class="number">1</span>);</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; permute(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums) &#123;</span><br><span class="line">		allRange(nums, <span class="number">0</span>);</span><br><span class="line">		<span class="keyword">return</span> ans;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>具体解决的是LeetCode上<a href="https://leetcode-cn.com/problems/permutations/">P46.全排列问题</a>。  </p>
+<p>可以看到，代码中是一直在做交换。那么是如何交换的呢。可以简单用个例子展示一下，比如123。123的全排列有123、132、213、231、312、321这六种。首先考虑213和321这二个数是如何得出的。显然这二个都是123中的1与后面两数交换得到的。然后可以将123的第二个数和每三个数交换得到132。同理可以根据213和321来得231和312。因此可以得出 <strong>全排列就是从第一个数字起每个数分别与它后面的数字交换。</strong>  </p>
+<p>这样一个简单的全排列解决方案就完成了。可是如果遇到元素结合里有重复元素，则会出现重复排列的情况。比如122，按照这个算法会出现多个重复的排列。  </p>
+<p>那么继续按照上面的思路，由于 __由于全排列就是从第一个数字起每个数分别与它后面的数字交换__，我们先尝试加个这样的判断——如果一个数与后面的数字相同那么这二个数就不交换了。如122，第一个数与后面交换得212、221。然后122中第二数就不用与第三个数交换了，但对212，它第二个数与第三个数是不相同的，交换之后得到221。与由122中第一个数与第三个数交换所得的221重复了。所以这个方法不行。  </p>
+<p>换种思维，对122，第一个数1与第二个数2交换得到212，然后考虑第一个数1与第三个数2交换，此时由于第三个数等于第二个数，所以第一个数不再与第三个数交换。再考虑212，它的第二个数与第三个数交换可以得到解决221。此时全排列生成完毕。  </p>
+<p>这样我们也得到了在全排列中去掉重复的规则—— __去重的全排列就是从第一个数字起每个数分别与它后面非重复出现的数字交换__。用编程的话描述就是第i个数与第j个数交换时，要求[i,j)中没有与第j个数相等的数。下面给出一份示例代码：  </p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; ans;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">bool</span> <span class="title">isSwaped</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> begin, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = begin; i &lt; end; ++i) &#123;</span><br><span class="line">			<span class="keyword">if</span> (nums[i] == nums[end]) &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">allRange</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> len = nums.size();</span><br><span class="line">		<span class="keyword">if</span> (k == len - <span class="number">1</span>) &#123;</span><br><span class="line">			ans.push_back(nums);</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = k; i &lt; len; ++i) &#123;</span><br><span class="line">				<span class="keyword">if</span> (!isSwaped(nums, k, i)) &#123;</span><br><span class="line">					<span class="keyword">continue</span>;</span><br><span class="line">				&#125;</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">				allRange(nums, k + <span class="number">1</span>);</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; permuteUnique(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums) &#123;</span><br><span class="line">		allRange(nums, <span class="number">0</span>);</span><br><span class="line">		<span class="keyword">return</span> ans;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>具体解决的问题是LeetCode上<a href="https://leetcode-cn.com/problems/permutations-ii/">47. 全排列 II</a>。</p>
+]]></content>
+      <categories>
+        <category>数据结构与算法</category>
+      </categories>
+      <tags>
+        <tag>数据结构与算法</tag>
+        <tag>全排列</tag>
+        <tag>leetcode</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Next主题相关配置</title>
     <url>/2021/01/06/next%E4%B8%BB%E9%A2%98%E7%9B%B8%E5%85%B3%E9%85%8D%E7%BD%AE/</url>
     <content><![CDATA[<h1 id="设置hexo首页只显示部分摘要"><a href="#设置hexo首页只显示部分摘要" class="headerlink" title="设置hexo首页只显示部分摘要"></a>设置hexo首页只显示部分摘要</h1><p>只针对Next主题，不确保对于其它主题有效（但从修改模式来看，是有效的）</p>
@@ -46,37 +80,46 @@
       </tags>
   </entry>
   <entry>
-    <title>全排列简介</title>
-    <url>/2020/11/07/%E5%85%A8%E6%8E%92%E5%88%97%E7%AE%80%E4%BB%8B/</url>
-    <content><![CDATA[<p>最近打算把印象笔记记的笔记慢慢地写成博客的形式归档起来，也算是给自己的一个督促。  </p>
-<h2 id="1-基础概念"><a href="#1-基础概念" class="headerlink" title="1.基础概念"></a>1.基础概念</h2><p>这个概念最早接触是在高中时学oi在那本老旧的竞赛书上接触到的。抛出的问题类似于</p>
-<blockquote>
-<p>写一个函数, 如 Foo(const char *str), 打印出 str 的全排列, 如 abc 的全排列: abc, acb, bca, dac, cab, cba。。  </p>
-</blockquote>
-<p>排列和组合的区别就在于是否是有顺序的，全排列从字面上的意思就是列出所有元素的排列，其实这个直观的理解是没有错的。不过还是查一下网上的定义。</p>
-<blockquote>
-<p>从n个不同元素中任取m（m≤n）个元素，按照一定的顺序排列起来，叫做从n个不同元素中取出m个元素的一个排列。当m=n时所有的排列情况叫全排列。<br>公式：全排列数f(n)=n!(定义0!=1)</p>
-</blockquote>
-<p>以上就可以大概了解全排列是个什么东西了。那么直接上一版最简单的通过递归实现的全排列代码。</p>
+    <title>yaml-cpp使用备忘</title>
+    <url>/2021/01/17/yaml-cpp%E4%BD%BF%E7%94%A8%E5%A4%87%E5%BF%98/</url>
+    <content><![CDATA[<p>yaml是一种读取配置文件的开源库，新项目主要使用的是这个作为读取配置的工具（之前是xml和json，后面有空可以做个之间的对比）。但cpp并没有原生的读取yaml文件的接口，所以我们需要下载源码然后编译生成库文件。</p>
 <a id="more"></a>
 
-<h2 id="2-全排列递归实现方式"><a href="#2-全排列递归实现方式" class="headerlink" title="2.全排列递归实现方式"></a>2.全排列递归实现方式</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; ans;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">allRange</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> len = nums.size();</span><br><span class="line">		<span class="keyword">if</span> (k == len - <span class="number">1</span>) &#123;</span><br><span class="line">			ans.push_back(nums);</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = k; i &lt; len; ++i) &#123;</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">				allRange(nums, k + <span class="number">1</span>);</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; permute(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums) &#123;</span><br><span class="line">		allRange(nums, <span class="number">0</span>);</span><br><span class="line">		<span class="keyword">return</span> ans;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>具体解决的是LeetCode上<a href="https://leetcode-cn.com/problems/permutations/">P46.全排列问题</a>。  </p>
-<p>可以看到，代码中是一直在做交换。那么是如何交换的呢。可以简单用个例子展示一下，比如123。123的全排列有123、132、213、231、312、321这六种。首先考虑213和321这二个数是如何得出的。显然这二个都是123中的1与后面两数交换得到的。然后可以将123的第二个数和每三个数交换得到132。同理可以根据213和321来得231和312。因此可以得出 <strong>全排列就是从第一个数字起每个数分别与它后面的数字交换。</strong>  </p>
-<p>这样一个简单的全排列解决方案就完成了。可是如果遇到元素结合里有重复元素，则会出现重复排列的情况。比如122，按照这个算法会出现多个重复的排列。  </p>
-<p>那么继续按照上面的思路，由于 __由于全排列就是从第一个数字起每个数分别与它后面的数字交换__，我们先尝试加个这样的判断——如果一个数与后面的数字相同那么这二个数就不交换了。如122，第一个数与后面交换得212、221。然后122中第二数就不用与第三个数交换了，但对212，它第二个数与第三个数是不相同的，交换之后得到221。与由122中第一个数与第三个数交换所得的221重复了。所以这个方法不行。  </p>
-<p>换种思维，对122，第一个数1与第二个数2交换得到212，然后考虑第一个数1与第三个数2交换，此时由于第三个数等于第二个数，所以第一个数不再与第三个数交换。再考虑212，它的第二个数与第三个数交换可以得到解决221。此时全排列生成完毕。  </p>
-<p>这样我们也得到了在全排列中去掉重复的规则—— __去重的全排列就是从第一个数字起每个数分别与它后面非重复出现的数字交换__。用编程的话描述就是第i个数与第j个数交换时，要求[i,j)中没有与第j个数相等的数。下面给出一份示例代码：  </p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; ans;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">bool</span> <span class="title">isSwaped</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> begin, <span class="keyword">int</span> end)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> (<span class="keyword">int</span> i = begin; i &lt; end; ++i) &#123;</span><br><span class="line">			<span class="keyword">if</span> (nums[i] == nums[end]) &#123;</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">void</span> <span class="title">allRange</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">		<span class="keyword">int</span> len = nums.size();</span><br><span class="line">		<span class="keyword">if</span> (k == len - <span class="number">1</span>) &#123;</span><br><span class="line">			ans.push_back(nums);</span><br><span class="line">			<span class="keyword">return</span>;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">for</span> (<span class="keyword">int</span> i = k; i &lt; len; ++i) &#123;</span><br><span class="line">				<span class="keyword">if</span> (!isSwaped(nums, k, i)) &#123;</span><br><span class="line">					<span class="keyword">continue</span>;</span><br><span class="line">				&#125;</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">				allRange(nums, k + <span class="number">1</span>);</span><br><span class="line">				swap(nums[k], nums[i]);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; permuteUnique(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums) &#123;</span><br><span class="line">		allRange(nums, <span class="number">0</span>);</span><br><span class="line">		<span class="keyword">return</span> ans;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-<p>具体解决的问题是LeetCode上<a href="https://leetcode-cn.com/problems/permutations-ii/">47. 全排列 II</a>。</p>
+<h1 id="使用yaml-cpp"><a href="#使用yaml-cpp" class="headerlink" title="使用yaml-cpp"></a>使用yaml-cpp</h1><p>yaml-cpp 是一个开源库，地址在 github 上，<a href="https://github.com/jbeder/yaml-cpp">https://github.com/jbeder/yaml-cpp</a></p>
+<p>yaml-cpp 是通过 CMake 来进行构建和编译的。</p>
+<p>CMake具体细节可以先不做研究，后面只需要使用CMake对工程进行构建就好了。</p>
+<p>首先下载源码。下载好后其实具体使用步骤在yaml-cpp/install.txt中也有具体描述。</p>
+<p>然后，在源码目录创建一个 build 文件夹。切换到build文件夹，然后执行cmake</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line"><span class="built_in">cd</span> build</span><br><span class="line">cmake ..</span><br></pre></td></tr></table></figure>
+<p>注意的是 cmake 后面是 <code>..</code>，这代表从 build 上一层目录查找 CMakeLists.txt （如果你的build目录在别处就是别的相对路径了），然后编译的文件都会存放在 build 文件夹，如果对编译的效果不满意，只要删除 build 文件就好了，其他源码目录并不受影响，这是 cmake 编译时的基本套路。</p>
+<p>yaml-cpp 默认构建的就是静态库，也就是 unix 类系统下的 .a 文件，如果你想构建动态库的话，就需要在 cmake 时指定。</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cmake ..  -D BUILD_SHARED_LIBS=ON</span><br></pre></td></tr></table></figure>
+<p>编译成功后，会生成库文件，<del>你只需要将库文件和头文件拷贝到你自己的工程当中，就可以使用了。</del></p>
+<p>上面下划线是原文当中的做法，更好的做法是根据install.txt中的做法，直接执行</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">make install</span><br></pre></td></tr></table></figure>
+<p>对应的.so文件会被安装到系统目录下去。笔者自己执行后对应yaml-cpp一系列的so文件是到了<code>usr/local/lib64</code>。</p>
+<h2 id="安装新的动态库到linux"><a href="#安装新的动态库到linux" class="headerlink" title="安装新的动态库到linux"></a>安装新的动态库到linux</h2><p>这边顺带提下，安装新的三方库到linux系统下，如果不做任何处理，你直接编译执行需要使用这个库的程序是会报如下错误的</p>
+<blockquote>
+<p>error while loading shared libraries: libyaml-cpp.so: cannot open shared object file: No such file or directory</p>
+</blockquote>
+<p>意思是系统找不到对应的动态库文件***.so，一般linux系统都是去/usr/lib下找的，上面提到我们这次安装的yaml-cpp被安装到了<code>usr/local/lib64</code>。</p>
+<ol>
+<li>首先打开/etc/ld.so.conf文件</li>
+<li>加入动态库文件所在的目录：执行<code>vim /etc/ld.so.conf</code>，在<code>&quot;include ld.so.conf.d/*.conf&quot;</code>下方增加<code>/usr/local/lib64</code>。(大部分其他库会被安装到<code>/usr/local/lib</code>下，那就加这个目录，笔者的配置这俩都已经加进去了)</li>
+<li>保存后，在命令行终端执行：<code>/sbin/ldconfig -v</code>；其作用是将文件/etc/ld.so.conf列出的路径下的库文件缓存到<code>/etc/ld.so.cache</code>以供使用。因此当安装完一些库文件，或者修改<code>/etc/ld.so.conf</code>增加了库的新搜索路径，需要运行一下ldconfig，使所有的库文件都被缓存到文件/etc/ld.so.cache中，如果没做，可能会找不到刚安装的库。</li>
+</ol>
+<p>这样执行完后，使用了yaml-cpp的程序就能正常运行了。</p>
+<p>当然稍微大点的工程在使用第三方库时肯定会在Makefile中include进去，另一篇文章会介绍一个简单工程的Makefile的编写，里面包含了如何将yaml-cpp带进自己的工程中去编译使用。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a href="https://blog.csdn.net/briblue/article/details/89515470">c++ 开发中利用yaml-cpp读写yaml配置文件</a></p>
+<p><a href="https://blog.csdn.net/hankerbit/article/details/83834349">Linux中error while loading shared libraries错误解决办法</a></p>
 ]]></content>
       <categories>
-        <category>数据结构与算法</category>
+        <category>开发工具</category>
       </categories>
       <tags>
-        <tag>数据结构与算法</tag>
-        <tag>全排列</tag>
-        <tag>leetcode</tag>
+        <tag>yaml</tag>
+        <tag>cpp</tag>
+        <tag>第三方库</tag>
       </tags>
   </entry>
   <entry>
@@ -130,51 +173,8 @@
         <category>开发工具</category>
       </categories>
       <tags>
+        <tag>cpp</tag>
         <tag>Makefile</tag>
-        <tag>cpp</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>yaml-cpp使用备忘</title>
-    <url>/2021/01/17/yaml-cpp%E4%BD%BF%E7%94%A8%E5%A4%87%E5%BF%98/</url>
-    <content><![CDATA[<p>yaml是一种读取配置文件的开源库，新项目主要使用的是这个作为读取配置的工具（之前是xml和json，后面有空可以做个之间的对比）。但cpp并没有原生的读取yaml文件的接口，所以我们需要下载源码然后编译生成库文件。</p>
-<a id="more"></a>
-
-<h1 id="使用yaml-cpp"><a href="#使用yaml-cpp" class="headerlink" title="使用yaml-cpp"></a>使用yaml-cpp</h1><p>yaml-cpp 是一个开源库，地址在 github 上，<a href="https://github.com/jbeder/yaml-cpp">https://github.com/jbeder/yaml-cpp</a></p>
-<p>yaml-cpp 是通过 CMake 来进行构建和编译的。</p>
-<p>CMake具体细节可以先不做研究，后面只需要使用CMake对工程进行构建就好了。</p>
-<p>首先下载源码。下载好后其实具体使用步骤在yaml-cpp/install.txt中也有具体描述。</p>
-<p>然后，在源码目录创建一个 build 文件夹。切换到build文件夹，然后执行cmake</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line"><span class="built_in">cd</span> build</span><br><span class="line">cmake ..</span><br></pre></td></tr></table></figure>
-<p>注意的是 cmake 后面是 <code>..</code>，这代表从 build 上一层目录查找 CMakeLists.txt （如果你的build目录在别处就是别的相对路径了），然后编译的文件都会存放在 build 文件夹，如果对编译的效果不满意，只要删除 build 文件就好了，其他源码目录并不受影响，这是 cmake 编译时的基本套路。</p>
-<p>yaml-cpp 默认构建的就是静态库，也就是 unix 类系统下的 .a 文件，如果你想构建动态库的话，就需要在 cmake 时指定。</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">cmake ..  -D BUILD_SHARED_LIBS=ON</span><br></pre></td></tr></table></figure>
-<p>编译成功后，会生成库文件，<del>你只需要将库文件和头文件拷贝到你自己的工程当中，就可以使用了。</del></p>
-<p>上面下划线是原文当中的做法，更好的做法是根据install.txt中的做法，直接执行</p>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">make install</span><br></pre></td></tr></table></figure>
-<p>对应的.so文件会被安装到系统目录下去。笔者自己执行后对应yaml-cpp一系列的so文件是到了<code>usr/local/lib64</code>。</p>
-<h2 id="安装新的动态库到linux"><a href="#安装新的动态库到linux" class="headerlink" title="安装新的动态库到linux"></a>安装新的动态库到linux</h2><p>这边顺带提下，安装新的三方库到linux系统下，如果不做任何处理，你直接编译执行需要使用这个库的程序是会报如下错误的</p>
-<blockquote>
-<p>error while loading shared libraries: libyaml-cpp.so: cannot open shared object file: No such file or directory</p>
-</blockquote>
-<p>意思是系统找不到对应的动态库文件***.so，一般linux系统都是去/usr/lib下找的，上面提到我们这次安装的yaml-cpp被安装到了<code>usr/local/lib64</code>。</p>
-<ol>
-<li>首先打开/etc/ld.so.conf文件</li>
-<li>加入动态库文件所在的目录：执行<code>vim /etc/ld.so.conf</code>，在<code>&quot;include ld.so.conf.d/*.conf&quot;</code>下方增加<code>/usr/local/lib64</code>。(大部分其他库会被安装到<code>/usr/local/lib</code>下，那就加这个目录，笔者的配置这俩都已经加进去了)</li>
-<li>保存后，在命令行终端执行：<code>/sbin/ldconfig -v</code>；其作用是将文件/etc/ld.so.conf列出的路径下的库文件缓存到<code>/etc/ld.so.cache</code>以供使用。因此当安装完一些库文件，或者修改<code>/etc/ld.so.conf</code>增加了库的新搜索路径，需要运行一下ldconfig，使所有的库文件都被缓存到文件/etc/ld.so.cache中，如果没做，可能会找不到刚安装的库。</li>
-</ol>
-<p>这样执行完后，使用了yaml-cpp的程序就能正常运行了。</p>
-<p>当然稍微大点的工程在使用第三方库时肯定会在Makefile中include进去，另一篇文章会介绍一个简单工程的Makefile的编写，里面包含了如何将yaml-cpp带进自己的工程中去编译使用。</p>
-<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a href="https://blog.csdn.net/briblue/article/details/89515470">c++ 开发中利用yaml-cpp读写yaml配置文件</a></p>
-<p><a href="https://blog.csdn.net/hankerbit/article/details/83834349">Linux中error while loading shared libraries错误解决办法</a></p>
-]]></content>
-      <categories>
-        <category>开发工具</category>
-      </categories>
-      <tags>
-        <tag>cpp</tag>
-        <tag>yaml</tag>
-        <tag>第三方库</tag>
       </tags>
   </entry>
   <entry>
@@ -209,68 +209,6 @@
       </categories>
       <tags>
         <tag>数据结构与算法</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>markdown学习</title>
-    <url>/2017/07/02/markdown%E8%AF%AD%E6%B3%95%E5%AD%A6%E4%B9%A0/</url>
-    <content><![CDATA[<p>既然想着开始用github+hexo写博客了，那么最入门的就是学习一下markdown的书写语法了。</p>
-<a id="more"></a>
-
-<h1 id="1-MarkDown简要语法"><a href="#1-MarkDown简要语法" class="headerlink" title="1.MarkDown简要语法"></a>1.MarkDown简要语法</h1><h2 id="标题"><a href="#标题" class="headerlink" title="标题"></a>标题</h2><p>标题是每篇文章都需要也是最常用的格式，在 Markdown 中，如果一段文字被定义为标题，只要在这段文字前加 # 号即可。<br>#一级标题<br>##二级标题<br>以此类推，markdown一共支持六级标题划分  </p>
-<h2 id="列表"><a href="#列表" class="headerlink" title="列表"></a>列表</h2><p>在html中列表分为有序列表和无序列表两种。在 Markdown 下，列表的显示只需要在文字前加上 - 或 * 即可变为无序列表，有序列表则直接在文字前加1. 2. 3. 符号要和文字之间加上一个字符的空格。如：  </p>
-<h3 id="无序列表"><a href="#无序列表" class="headerlink" title="无序列表"></a>无序列表</h3><ul>
-<li>1</li>
-<li>2</li>
-<li>3  </li>
-</ul>
-<h3 id="有序列表"><a href="#有序列表" class="headerlink" title="有序列表"></a>有序列表</h3><ol>
-<li>甲</li>
-<li>乙</li>
-<li>丙</li>
-</ol>
-<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p>如果需要引用别处的一些语句，则需要在文本前加入&gt;(尖括号),如  </p>
-<blockquote>
-<p>引用文本</p>
-</blockquote>
-<h2 id="图片与链接"><a href="#图片与链接" class="headerlink" title="图片与链接"></a>图片与链接</h2><p>插入链接与插入图片的语法很像，区别在一个 !号<br>图片为：<img src="http://qmgvbv5fp.hd-bkt.clouddn.com/1.jpg" alt="测试图片"><br>链接为：<a href=""></a><br>插入图片的地址需要图床，暂时就不推荐了，有了图床生成URL地址即可。<br><a href="jxlxy1995.github.io">链接</a><br>图片示例待添加</p>
-<h2 id="粗体与斜体"><a href="#粗体与斜体" class="headerlink" title="粗体与斜体"></a>粗体与斜体</h2><p>Markdown 的粗体和斜体与我所看到的部分文章不符，用两个星号包含一段文本就是斜体的语法，用两段下划线包含一段文本就是粗体的语法。<br>例如，<em>这里是斜体</em>  <strong>这里是粗体</strong></p>
-<h2 id="表格"><a href="#表格" class="headerlink" title="表格"></a>表格</h2><p>表格是我觉得 Markdown 比较累人的地方，例子如下:<br>    | Tables        | Are           | Cool  |<br>    | ————- |:————-:| —–:|<br>    | col 3 is      | right-aligned | $1600 |<br>    | col 2 is      | centered      |   $12 |<br>    | zebra stripes | are neat      |    $1 |<br>效果如下：  </p>
-<table>
-<thead>
-<tr>
-<th>Tables</th>
-<th align="center">Are</th>
-<th align="right">Cool</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>col 3 is</td>
-<td align="center">right-aligned</td>
-<td align="right">$1600</td>
-</tr>
-<tr>
-<td>col 2 is</td>
-<td align="center">centered</td>
-<td align="right">$12</td>
-</tr>
-<tr>
-<td>zebra stripes</td>
-<td align="center">are neat</td>
-<td align="right">$1</td>
-</tr>
-</tbody></table>
-<h2 id="代码框"><a href="#代码框" class="headerlink" title="代码框"></a>代码框</h2><p>作为一个程序员肯定是需要有代码出现在文章中的，这时就需要引入代码框了。在 Markdown下实现也非常简单，起始三个点号(波浪号那个键)+语言，结尾三个点号即可。<br> <figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;hello MarkDown\n&quot;</span>);</span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure></p>
-<h2 id="分割线"><a href="#分割线" class="headerlink" title="分割线"></a>分割线</h2><p>分割线的语法只需要三个 * 号，例如:  </p>
-<hr>
-<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>到这里，Markdown 的基本语法在日常的使用中基本就没什么大问题了，只要多加练习，配合好用的工具，写起东西来肯定会行云流水。<br>本文为本人学习markdown语法练手所写，内容基本转自简书一篇文章，<a href="http://www.jianshu.com/p/1e402922ee32/">原文链接</a>。</p>
-]]></content>
-      <categories>
-        <category>开发工具</category>
-      </categories>
-      <tags>
-        <tag>其他技术</tag>
-        <tag>markdown</tag>
       </tags>
   </entry>
   <entry>
@@ -334,6 +272,153 @@
       <tags>
         <tag>gdb</tag>
         <tag>linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>vector插入n个相同元素性能对比</title>
+    <url>/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/</url>
+    <content><![CDATA[<p>写了一段测试程序对比插入n个相同元素到一个vector中消耗的时间，顺便总结一些相关概念。</p>
+<a id="more"></a>
+
+<h1 id="插入相同元素测试代码"><a href="#插入相同元素测试代码" class="headerlink" title="插入相同元素测试代码"></a>插入相同元素测试代码</h1><p>代码如下</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;int32&gt; vec1,vec2,vec3,vec4,vec5;</span><br><span class="line">int32 count = <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line">uint64 startTick = <span class="number">0</span>;</span><br><span class="line">uint64 endTick = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;push back:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec1.push_back(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;emplace back:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec2.emplace_back(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;resize:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec3.resize(count);</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec3[i] = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;reserve:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec4.reserve(count);</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec4[i] = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;resize with value:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec5.resize(count, <span class="number">1</span>);</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">CTS::printfVec(vec1);</span><br><span class="line">CTS::printfVec(vec2);</span><br><span class="line">CTS::printfVec(vec3);</span><br><span class="line">CTS::printfVec(vec4);</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;vec4 size = &quot;</span> &lt;&lt; vec4.size() &lt;&lt; <span class="string">&quot; cap = &quot;</span> &lt;&lt; vec4.capacity() &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">CTS::printfVec(vec5);</span><br></pre></td></tr></table></figure>
+<p>以上5个vector分别用五种不同的方式插入count个相同元素，要注意的vec是已初始化过的。如果是未初始化的容器本身vector就有初始n个相同元素的构造函数，如下：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">vec</span><span class="params">(n, m)</span></span>;</span><br></pre></td></tr></table></figure>
+<p>意为，初始化包含n个值为m的vec。</p>
+<p>回到上面代码，5个vector插入元素的方法分别为：</p>
+<ol>
+<li>调用count次<code>push_back</code>函数</li>
+<li>调用count次<code>emplace_back</code>函数</li>
+<li>使用resize函数申请count个元素大小内存，在通过下标赋值</li>
+<li>使用reserve函数申请count个元素大小内存，在通过下标赋值</li>
+<li>使用resize函数申请count个元素大小内存同时使用其第二个参数赋上初始值</li>
+</ol>
+<p>在count较小的情况下，五种方法基本上没有区别，当count值很大时，时间上就会有着较大的差别，如下：</p>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323221746893.png" class="" title="image-20210323221746893">
+
+<p>以上结果为count为一千万时的结果，时间单位为秒。</p>
+<p>可以看出，时间效率从上到下是越来越高的。</p>
+<p>所以，首先得到结果，<strong>这个问题本身的答案是使用第五种方法，即使用带初始化值的resize函数</strong></p>
+<p>しかし（但是，发音西噶西，哈哈哈哈）！其实上面的五种方法中，<strong>第四种方法其实是不能完成我们的需求的</strong>，如果代码count为5，打印结果是：</p>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323223319526.png" class="" title="image-20210323223319526">
+
+<p>vec4是没有元素被打印出来的，并且下方我打印出了它的<code>size()</code>和<code>capacity()</code>，那么这两者包括这两个函数有什么区别呢？下面来简单对比一下。</p>
+<h1 id="vector的resize-，reserve-，size-和capacity"><a href="#vector的resize-，reserve-，size-和capacity" class="headerlink" title="vector的resize()，reserve()，size()和capacity()"></a>vector的resize()，reserve()，size()和capacity()</h1><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><ol>
+<li><p>capacity</p>
+<p>指容器在分配新的存储空间之前能存储的元素总数。</p>
+</li>
+<li><p>size</p>
+<p>指当前容器所存储的元素个数</p>
+</li>
+</ol>
+<p>即capacity是容器可存储的最大总数，size是当前容器存储的个数。这样就比较明白了，至于两者之间差值的那些元素是什么情况，后续来说。可以先认为是未被初始化。</p>
+<ol>
+<li><p>resize<br>既分配了空间，也创建了对象。</p>
+<p>这里空间就是capacity，对象就是容器中的元素。</p>
+</li>
+<li><p>reserve<br>reserve()表示容器预留空间，但不是真正的创建对象，需要通过insert()或push_back()等操作创建对象。</p>
+</li>
+</ol>
+<p>其实size()和capacity()没有更多需要介绍的地方，大家平时coding时直接调用即可。当然size()的使用频率相当高，通常进行遍历操作时，最外层的for循环的次数即为size()。</p>
+<h2 id="resize和reverse区别"><a href="#resize和reverse区别" class="headerlink" title="resize和reverse区别"></a>resize和reverse区别</h2><ol>
+<li>reserve()只修改capacity大小，不修改size大小；</li>
+<li>resize()既修改capacity大小，也修改size大小。</li>
+</ol>
+<p>有如下示例代码：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; a;</span><br><span class="line"></span><br><span class="line">a.reserve(<span class="number">100</span>);</span><br><span class="line">a.resize(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.resize(<span class="number">150</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.reserve(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.resize(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br></pre></td></tr></table></figure>
+<p>结果如下：</p>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323224953990.png" class="" title="image-20210323224953990">
+
+<p>可以看出，和如上所说的一样。且最后一个操作表明，resize一个原来capacity更大的vector时，capacity不会被缩小，只有size会被resize所修改。</p>
+<p>还有一种实验，我们一直<code>push_back</code>count个元素一直打印这两个值，会发现，部分情况下size等于capacity，但大部分情况下capacity会大于size。这也是因为vector动态分配空间所导致的。那么这样刚好说下为什么，最上面代码使用<code>push_back</code>和<code>emplace_back</code>效率远低于<code>resize</code>的原因。</p>
+<h2 id="push-back过程"><a href="#push-back过程" class="headerlink" title="push_back过程"></a>push_back过程</h2><p>push_back是向容器vec尾部插入一个元素，如果此时size小于cap，则直接插入即可。如果此时size已经等于cap，那么STL会重新申请一块两倍于此时cap容量的连续内存，先将之前的内存拷贝到此处，再在其尾部插入这个新元素。所以，从零开始一个一个插入元素势必会进行巨量的这个过程，也就带来了大量的时间花销。</p>
+<p>此外，对于vector每次扩容是否是两倍的这个说法，网上也有些不同的说法，在此不细究，我自己试验下来，小数目情况下确实是两倍。非两倍情况可能是STL版本或者数量大的情况不一样。附测试代码和结果，环境为<code>linux</code>+<code>gcc9.2</code></p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; vec6;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; ++i)&#123;</span><br><span class="line">    vec6.push_back(i);</span><br><span class="line">    <span class="built_in">cout</span>&lt;&lt; <span class="string">&quot;size: &quot;</span> &lt;&lt;vec6.size()&lt;&lt;<span class="string">&quot;  cap: &quot;</span>&lt;&lt;vec6.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323231146512.png" class="" title="image-20210323231146512">
+
+<h2 id="emplace-back-和push-back-的区别"><a href="#emplace-back-和push-back-的区别" class="headerlink" title="emplace_back()和push_back()的区别"></a>emplace_back()和push_back()的区别</h2><p>上面代码第一第二种方法虽然差距很小，但仍然还是有一点细微的时间差距。在此也记录一下这两者之间的区别。</p>
+<p><strong>对于最终结果来说，这两个函数是一样的，都是将一个元素插入到容器最后。</strong></p>
+<p>其中<code>emplace_back()</code>函数是C++11新增加的，那么既然功能完全一样，C++11引入它的原因是什么呢。</p>
+<p><code>emplace_back()</code> 和 <code>push_back()</code> 的区别，就在于底层实现的机制不同。<code>push_back()</code> 向容器尾部添加元素时，首先会创建这个元素，然后再将这个元素拷贝或者移动到容器中（如果是拷贝的话，事后会自行销毁先前创建的这个元素）；而 emplace_back() 在实现时，则是直接在容器尾部创建这个元素，省去了拷贝或移动元素的过程。有如下代码：</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt; </span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt; </span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">testDemo</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    testDemo(<span class="keyword">int</span> num):num(num)&#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    testDemo(<span class="keyword">const</span> testDemo&amp; other) :num(other.num) &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用拷贝构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    testDemo(testDemo&amp;&amp; other) :num(other.num) &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用移动构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">int</span> num;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;emplace_back:&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;testDemo&gt; demo1;</span><br><span class="line">    demo1.emplace_back(<span class="number">2</span>);  </span><br><span class="line"></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;push_back:&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;testDemo&gt; demo2;</span><br><span class="line">    demo2.push_back(<span class="number">2</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">emplace_back:</span><br><span class="line">调用构造函数</span><br><span class="line">push_back:</span><br><span class="line">调用构造函数</span><br><span class="line">调用移动构造函数</span><br></pre></td></tr></table></figure>
+<p>在此基础上，尝试将 testDemo 类中的移动构造函数注释掉，再运行程序会发现，运行结果变为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">emplace_back:</span><br><span class="line">调用构造函数</span><br><span class="line">push_back:</span><br><span class="line">调用构造函数</span><br><span class="line">调用拷贝构造函数</span><br></pre></td></tr></table></figure>
+<p>由此可以看出，push_back() 在底层实现时，会优先选择调用移动构造函数，如果没有才会调用拷贝构造函数。</p>
+<p>显然完成同样的操作，push_back() 的底层实现过程比 emplace_back() 更繁琐，换句话说，emplace_back() 的执行效率比 push_back() 高。<strong>因此，在实际使用时，建议优先选用emplace_back()。</strong></p>
+<p>但是，由于 emplace_back() 是 C++ 11 标准新增加的，如果程序要兼顾之前的版本，还是应该使用 push_back()。且对于基础类型或者内容很小的类来说，这两者也不会带来太大的性能差异。</p>
+<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a href="http://c.biancheng.net/view/6826.html">C++ STL vector添加元素（push_back()和emplace_back()）详解</a></p>
+]]></content>
+      <categories>
+        <category>STL</category>
+      </categories>
+      <tags>
+        <tag>数据结构与算法</tag>
+        <tag>cpp</tag>
+        <tag>stl</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>markdown学习</title>
+    <url>/2017/07/02/markdown%E8%AF%AD%E6%B3%95%E5%AD%A6%E4%B9%A0/</url>
+    <content><![CDATA[<p>既然想着开始用github+hexo写博客了，那么最入门的就是学习一下markdown的书写语法了。</p>
+<a id="more"></a>
+
+<h1 id="1-MarkDown简要语法"><a href="#1-MarkDown简要语法" class="headerlink" title="1.MarkDown简要语法"></a>1.MarkDown简要语法</h1><h2 id="标题"><a href="#标题" class="headerlink" title="标题"></a>标题</h2><p>标题是每篇文章都需要也是最常用的格式，在 Markdown 中，如果一段文字被定义为标题，只要在这段文字前加 # 号即可。<br>#一级标题<br>##二级标题<br>以此类推，markdown一共支持六级标题划分  </p>
+<h2 id="列表"><a href="#列表" class="headerlink" title="列表"></a>列表</h2><p>在html中列表分为有序列表和无序列表两种。在 Markdown 下，列表的显示只需要在文字前加上 - 或 * 即可变为无序列表，有序列表则直接在文字前加1. 2. 3. 符号要和文字之间加上一个字符的空格。如：  </p>
+<h3 id="无序列表"><a href="#无序列表" class="headerlink" title="无序列表"></a>无序列表</h3><ul>
+<li>1</li>
+<li>2</li>
+<li>3  </li>
+</ul>
+<h3 id="有序列表"><a href="#有序列表" class="headerlink" title="有序列表"></a>有序列表</h3><ol>
+<li>甲</li>
+<li>乙</li>
+<li>丙</li>
+</ol>
+<h2 id="引用"><a href="#引用" class="headerlink" title="引用"></a>引用</h2><p>如果需要引用别处的一些语句，则需要在文本前加入&gt;(尖括号),如  </p>
+<blockquote>
+<p>引用文本</p>
+</blockquote>
+<h2 id="图片与链接"><a href="#图片与链接" class="headerlink" title="图片与链接"></a>图片与链接</h2><p>插入链接与插入图片的语法很像，区别在一个 !号<br>图片为：<img src="http://qmgvbv5fp.hd-bkt.clouddn.com/1.jpg" alt="测试图片"><br>链接为：<a href=""></a><br>插入图片的地址需要图床，暂时就不推荐了，有了图床生成URL地址即可。<br><a href="jxlxy1995.github.io">链接</a><br>图片示例待添加</p>
+<h2 id="粗体与斜体"><a href="#粗体与斜体" class="headerlink" title="粗体与斜体"></a>粗体与斜体</h2><p>Markdown 的粗体和斜体与我所看到的部分文章不符，用两个星号包含一段文本就是斜体的语法，用两段下划线包含一段文本就是粗体的语法。<br>例如，<em>这里是斜体</em>  <strong>这里是粗体</strong></p>
+<h2 id="表格"><a href="#表格" class="headerlink" title="表格"></a>表格</h2><p>表格是我觉得 Markdown 比较累人的地方，例子如下:<br>    | Tables        | Are           | Cool  |<br>    | ————- |:————-:| —–:|<br>    | col 3 is      | right-aligned | $1600 |<br>    | col 2 is      | centered      |   $12 |<br>    | zebra stripes | are neat      |    $1 |<br>效果如下：  </p>
+<table>
+<thead>
+<tr>
+<th>Tables</th>
+<th align="center">Are</th>
+<th align="right">Cool</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>col 3 is</td>
+<td align="center">right-aligned</td>
+<td align="right">$1600</td>
+</tr>
+<tr>
+<td>col 2 is</td>
+<td align="center">centered</td>
+<td align="right">$12</td>
+</tr>
+<tr>
+<td>zebra stripes</td>
+<td align="center">are neat</td>
+<td align="right">$1</td>
+</tr>
+</tbody></table>
+<h2 id="代码框"><a href="#代码框" class="headerlink" title="代码框"></a>代码框</h2><p>作为一个程序员肯定是需要有代码出现在文章中的，这时就需要引入代码框了。在 Markdown下实现也非常简单，起始三个点号(波浪号那个键)+语言，结尾三个点号即可。<br> <figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">printf</span>(<span class="string">&quot;hello MarkDown\n&quot;</span>);</span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br></pre></td></tr></table></figure></p>
+<h2 id="分割线"><a href="#分割线" class="headerlink" title="分割线"></a>分割线</h2><p>分割线的语法只需要三个 * 号，例如:  </p>
+<hr>
+<h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p>到这里，Markdown 的基本语法在日常的使用中基本就没什么大问题了，只要多加练习，配合好用的工具，写起东西来肯定会行云流水。<br>本文为本人学习markdown语法练手所写，内容基本转自简书一篇文章，<a href="http://www.jianshu.com/p/1e402922ee32/">原文链接</a>。</p>
+]]></content>
+      <categories>
+        <category>开发工具</category>
+      </categories>
+      <tags>
+        <tag>其他技术</tag>
+        <tag>markdown</tag>
       </tags>
   </entry>
   <entry>
@@ -459,91 +544,6 @@
       <tags>
         <tag>socket</tag>
         <tag>计算机网络</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>vector插入n个相同元素性能对比</title>
-    <url>/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/</url>
-    <content><![CDATA[<p>写了一段测试程序对比插入n个相同元素到一个vector中消耗的时间，顺便总结一些相关概念。</p>
-<a id="more"></a>
-
-<h1 id="插入相同元素测试代码"><a href="#插入相同元素测试代码" class="headerlink" title="插入相同元素测试代码"></a>插入相同元素测试代码</h1><p>代码如下</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">std</span>::<span class="built_in">vector</span>&lt;int32&gt; vec1,vec2,vec3,vec4,vec5;</span><br><span class="line">int32 count = <span class="number">5</span>;</span><br><span class="line"></span><br><span class="line">uint64 startTick = <span class="number">0</span>;</span><br><span class="line">uint64 endTick = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;push back:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec1.push_back(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;emplace back:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec2.emplace_back(<span class="number">1</span>);</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;resize:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec3.resize(count);</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec3[i] = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;reserve:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec4.reserve(count);</span><br><span class="line"><span class="keyword">for</span>(int32 i = <span class="number">0</span>; i &lt; count; ++i)&#123;</span><br><span class="line">vec4[i] = <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;resize with value:&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">startTick = CTS::getMsTimeStamp();</span><br><span class="line">vec5.resize(count, <span class="number">1</span>);</span><br><span class="line">endTick = CTS::getMsTimeStamp();</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;cost time: &quot;</span> &lt;&lt; endTick - startTick &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;----------------------------&quot;</span> &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line"></span><br><span class="line">CTS::printfVec(vec1);</span><br><span class="line">CTS::printfVec(vec2);</span><br><span class="line">CTS::printfVec(vec3);</span><br><span class="line">CTS::printfVec(vec4);</span><br><span class="line"><span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;vec4 size = &quot;</span> &lt;&lt; vec4.size() &lt;&lt; <span class="string">&quot; cap = &quot;</span> &lt;&lt; vec4.capacity() &lt;&lt; <span class="built_in">std</span>::<span class="built_in">endl</span>;</span><br><span class="line">CTS::printfVec(vec5);</span><br></pre></td></tr></table></figure>
-<p>以上5个vector分别用五种不同的方式插入count个相同元素，要注意的vec是已初始化过的。如果是未初始化的容器本身vector就有初始n个相同元素的构造函数，如下：</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">vec</span><span class="params">(n, m)</span></span>;</span><br></pre></td></tr></table></figure>
-<p>意为，初始化包含n个值为m的vec。</p>
-<p>回到上面代码，5个vector插入元素的方法分别为：</p>
-<ol>
-<li>调用count次<code>push_back</code>函数</li>
-<li>调用count次<code>emplace_back</code>函数</li>
-<li>使用resize函数申请count个元素大小内存，在通过下标赋值</li>
-<li>使用reserve函数申请count个元素大小内存，在通过下标赋值</li>
-<li>使用resize函数申请count个元素大小内存同时使用其第二个参数赋上初始值</li>
-</ol>
-<p>在count较小的情况下，五种方法基本上没有区别，当count值很大时，时间上就会有着较大的差别，如下：</p>
-<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323221746893.png" class="" title="image-20210323221746893">
-
-<p>以上结果为count为一千万时的结果，时间单位为秒。</p>
-<p>可以看出，时间效率从上到下是越来越高的。</p>
-<p>所以，首先得到结果，<strong>这个问题本身的答案是使用第五种方法，即使用带初始化值的resize函数</strong></p>
-<p>しかし（但是，发音西噶西，哈哈哈哈）！其实上面的五种方法中，<strong>第四种方法其实是不能完成我们的需求的</strong>，如果代码count为5，打印结果是：</p>
-<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323223319526.png" class="" title="image-20210323223319526">
-
-<p>vec4是没有元素被打印出来的，并且下方我打印出了它的<code>size()</code>和<code>capacity()</code>，那么这两者包括这两个函数有什么区别呢？下面来简单对比一下。</p>
-<h1 id="vector的resize-，reserve-，size-和capacity"><a href="#vector的resize-，reserve-，size-和capacity" class="headerlink" title="vector的resize()，reserve()，size()和capacity()"></a>vector的resize()，reserve()，size()和capacity()</h1><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h2><ol>
-<li><p>capacity</p>
-<p>指容器在分配新的存储空间之前能存储的元素总数。</p>
-</li>
-<li><p>size</p>
-<p>指当前容器所存储的元素个数</p>
-</li>
-</ol>
-<p>即capacity是容器可存储的最大总数，size是当前容器存储的个数。这样就比较明白了，至于两者之间差值的那些元素是什么情况，后续来说。可以先认为是未被初始化。</p>
-<ol>
-<li><p>resize<br>既分配了空间，也创建了对象。</p>
-<p>这里空间就是capacity，对象就是容器中的元素。</p>
-</li>
-<li><p>reserve<br>reserve()表示容器预留空间，但不是真正的创建对象，需要通过insert()或push_back()等操作创建对象。</p>
-</li>
-</ol>
-<p>其实size()和capacity()没有更多需要介绍的地方，大家平时coding时直接调用即可。当然size()的使用频率相当高，通常进行遍历操作时，最外层的for循环的次数即为size()。</p>
-<h2 id="resize和reverse区别"><a href="#resize和reverse区别" class="headerlink" title="resize和reverse区别"></a>resize和reverse区别</h2><ol>
-<li>reserve()只修改capacity大小，不修改size大小；</li>
-<li>resize()既修改capacity大小，也修改size大小。</li>
-</ol>
-<p>有如下示例代码：</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; a;</span><br><span class="line"></span><br><span class="line">a.reserve(<span class="number">100</span>);</span><br><span class="line">a.resize(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.resize(<span class="number">150</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.reserve(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">a.resize(<span class="number">50</span>);</span><br><span class="line"><span class="built_in">cout</span>&lt;&lt;a.size()&lt;&lt;<span class="string">&quot;  &quot;</span>&lt;&lt;a.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br></pre></td></tr></table></figure>
-<p>结果如下：</p>
-<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323224953990.png" class="" title="image-20210323224953990">
-
-<p>可以看出，和如上所说的一样。且最后一个操作表明，resize一个原来capacity更大的vector时，capacity不会被缩小，只有size会被resize所修改。</p>
-<p>还有一种实验，我们一直<code>push_back</code>count个元素一直打印这两个值，会发现，部分情况下size等于capacity，但大部分情况下capacity会大于size。这也是因为vector动态分配空间所导致的。那么这样刚好说下为什么，最上面代码使用<code>push_back</code>和<code>emplace_back</code>效率远低于<code>resize</code>的原因。</p>
-<h2 id="push-back过程"><a href="#push-back过程" class="headerlink" title="push_back过程"></a>push_back过程</h2><p>push_back是向容器vec尾部插入一个元素，如果此时size小于cap，则直接插入即可。如果此时size已经等于cap，那么STL会重新申请一块两倍于此时cap容量的连续内存，先将之前的内存拷贝到此处，再在其尾部插入这个新元素。所以，从零开始一个一个插入元素势必会进行巨量的这个过程，也就带来了大量的时间花销。</p>
-<p>此外，对于vector每次扩容是否是两倍的这个说法，网上也有些不同的说法，在此不细究，我自己试验下来，小数目情况下确实是两倍。非两倍情况可能是STL版本或者数量大的情况不一样。附测试代码和结果，环境为<code>linux</code>+<code>gcc9.2</code></p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; vec6;</span><br><span class="line"><span class="keyword">for</span>(<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">20</span>; ++i)&#123;</span><br><span class="line">    vec6.push_back(i);</span><br><span class="line">    <span class="built_in">cout</span>&lt;&lt; <span class="string">&quot;size: &quot;</span> &lt;&lt;vec6.size()&lt;&lt;<span class="string">&quot;  cap: &quot;</span>&lt;&lt;vec6.capacity()&lt;&lt;<span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<img src="/2021/03/23/vector%E6%8F%92%E5%85%A5n%E4%B8%AA%E7%9B%B8%E5%90%8C%E5%85%83%E7%B4%A0%E6%80%A7%E8%83%BD%E5%AF%B9%E6%AF%94/image-20210323231146512.png" class="" title="image-20210323231146512">
-
-<h2 id="emplace-back-和push-back-的区别"><a href="#emplace-back-和push-back-的区别" class="headerlink" title="emplace_back()和push_back()的区别"></a>emplace_back()和push_back()的区别</h2><p>上面代码第一第二种方法虽然差距很小，但仍然还是有一点细微的时间差距。在此也记录一下这两者之间的区别。</p>
-<p><strong>对于最终结果来说，这两个函数是一样的，都是将一个元素插入到容器最后。</strong></p>
-<p>其中<code>emplace_back()</code>函数是C++11新增加的，那么既然功能完全一样，C++11引入它的原因是什么呢。</p>
-<p><code>emplace_back()</code> 和 <code>push_back()</code> 的区别，就在于底层实现的机制不同。<code>push_back()</code> 向容器尾部添加元素时，首先会创建这个元素，然后再将这个元素拷贝或者移动到容器中（如果是拷贝的话，事后会自行销毁先前创建的这个元素）；而 emplace_back() 在实现时，则是直接在容器尾部创建这个元素，省去了拷贝或移动元素的过程。有如下代码：</p>
-<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;vector&gt; </span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt; </span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">testDemo</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    testDemo(<span class="keyword">int</span> num):num(num)&#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    testDemo(<span class="keyword">const</span> testDemo&amp; other) :num(other.num) &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用拷贝构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    testDemo(testDemo&amp;&amp; other) :num(other.num) &#123;</span><br><span class="line">        <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;调用移动构造函数&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    &#125;</span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="keyword">int</span> num;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;emplace_back:&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;testDemo&gt; demo1;</span><br><span class="line">    demo1.emplace_back(<span class="number">2</span>);  </span><br><span class="line"></span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="string">&quot;push_back:&quot;</span> &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">vector</span>&lt;testDemo&gt; demo2;</span><br><span class="line">    demo2.push_back(<span class="number">2</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>运行结果为：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">emplace_back:</span><br><span class="line">调用构造函数</span><br><span class="line">push_back:</span><br><span class="line">调用构造函数</span><br><span class="line">调用移动构造函数</span><br></pre></td></tr></table></figure>
-<p>在此基础上，尝试将 testDemo 类中的移动构造函数注释掉，再运行程序会发现，运行结果变为：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">emplace_back:</span><br><span class="line">调用构造函数</span><br><span class="line">push_back:</span><br><span class="line">调用构造函数</span><br><span class="line">调用拷贝构造函数</span><br></pre></td></tr></table></figure>
-<p>由此可以看出，push_back() 在底层实现时，会优先选择调用移动构造函数，如果没有才会调用拷贝构造函数。</p>
-<p>显然完成同样的操作，push_back() 的底层实现过程比 emplace_back() 更繁琐，换句话说，emplace_back() 的执行效率比 push_back() 高。<strong>因此，在实际使用时，建议优先选用emplace_back()。</strong></p>
-<p>但是，由于 emplace_back() 是 C++ 11 标准新增加的，如果程序要兼顾之前的版本，还是应该使用 push_back()。且对于基础类型或者内容很小的类来说，这两者也不会带来太大的性能差异。</p>
-<h1 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h1><p><a href="http://c.biancheng.net/view/6826.html">C++ STL vector添加元素（push_back()和emplace_back()）详解</a></p>
-]]></content>
-      <categories>
-        <category>STL</category>
-      </categories>
-      <tags>
-        <tag>数据结构与算法</tag>
-        <tag>cpp</tag>
-        <tag>stl</tag>
       </tags>
   </entry>
 </search>
