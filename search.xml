@@ -588,4 +588,29 @@
         <tag>Python</tag>
       </tags>
   </entry>
+  <entry>
+    <title>关于map使用的优化备忘</title>
+    <url>/2021/06/28/%E5%85%B3%E4%BA%8Emap%E4%BD%BF%E7%94%A8%E7%9A%84%E4%BC%98%E5%8C%96%E5%A4%87%E5%BF%98/</url>
+    <content><![CDATA[<p>今天领导在review我代码时提出了一处优化点，其实写完后看感觉很简单，但是总觉得很有启发意义，做一下记录。</p>
+<a id="more"></a>
+
+<h1 id="原始伪码"><a href="#原始伪码" class="headerlink" title="原始伪码"></a>原始伪码</h1><p>.h文件</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DataMgr</span> &#123;</span></span><br><span class="line">  <span class="comment">/***</span></span><br><span class="line"><span class="comment">  其他内容</span></span><br><span class="line"><span class="comment">  ***/</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">map</span>&lt;uint32, <span class="built_in">std</span>::<span class="built_in">map</span>&lt;uint32, A&gt;&gt; mapA;</span><br><span class="line">    <span class="built_in">std</span>::<span class="built_in">map</span>&lt;uint32, <span class="built_in">std</span>::<span class="built_in">map</span>&lt;uint32, B&gt;&gt; mapB;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>.cpp文件</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">DataMgr::fillMsg</span><span class="params">(uint32 userId, uint32 subKey)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">auto</span> iter = mapA_.find(userId);</span><br><span class="line">    <span class="keyword">if</span>(iter != mapA_.end()) &#123;</span><br><span class="line">        <span class="keyword">auto</span> iter2 = iter-&gt;second.find(subKey);</span><br><span class="line">        <span class="comment">/***</span></span><br><span class="line"><span class="comment">         * 使用iter2中A结构进行逻辑操作</span></span><br><span class="line"><span class="comment">        ***/</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">auto</span> iter = mapB_.find(userId);</span><br><span class="line">    <span class="keyword">if</span>(iter != mapB_.end()) &#123;</span><br><span class="line">        <span class="keyword">auto</span> iter2 = iter-&gt;second.find(subKey);</span><br><span class="line">        <span class="comment">/***</span></span><br><span class="line"><span class="comment">         * 使用iter2中B结构进行逻辑操作</span></span><br><span class="line"><span class="comment">        ***/</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>伪码未必完全一致和正确。要表达的意思是，数据管理类中有两个存放了不同数据的map。但其中两个map中key1，key2所代表意义是一样的。<code>fillMsg</code>是一个高频调用的函数。</p>
+<h1 id="发现问题并提出优化"><a href="#发现问题并提出优化" class="headerlink" title="发现问题并提出优化"></a>发现问题并提出优化</h1><p>其中<code>mapA</code>为原始存在的代码，<code>mapB</code>为我后续加的逻辑。当时一开始加了之后没太注意有一个如此类似的数据类，即使在我加完<code>fillMsg</code>中<code>mapB</code>的片段以及别的使用逻辑后仍未发现。今天领导提出这点，没什么可说的，肯定是要做并且有必要作优化的。（即使一开始有点“嘴硬”觉得<code>A</code>、<code>B</code>两个结构体在自然逻辑上不太那么说得通）</p>
+<p>但之后仔细想想，<code>fillMsg</code>是广播某个高频协议所使用的数据填充函数，那么该方法调用频率会非常高，两层map本身查找就会带来开销，做两次key值一模一样的查找无疑是很丑陋的。<strong>此处合并两个map所带来的的效率提升要远高于自然逻辑上那么一点点说不通的弊端。</strong></p>
+<h1 id="感想"><a href="#感想" class="headerlink" title="感想"></a>感想</h1><p>其实近段时间由于修改基础层代码偏多，领导提出的优化意见也很多。今天这个其实要说多突出也说不上，但我自己是很认可，并且觉得是很有必要备忘的一个点。在数据管理类后续加类似key值相同的数据时，先观察原有代码是否有可以合并进去的类。以及在使用时注意高频接口代码编写的执行效率，多一次这种map级别的查找是很不应该出现的。</p>
+<p>其实可能是上一个公司以及项目组或是对代码重构以及优化太不看重、或是本身那两年写的代码就不涉及太多高频以及底层逻辑，导致现在经常会犯或者说意识不到这类效率以及代码封装风格的问题。记一篇备忘，希望自己以后能在这方面做得更好一些。</p>
+]]></content>
+      <categories>
+        <category>C++</category>
+      </categories>
+      <tags>
+        <tag>cpp</tag>
+        <tag>stl</tag>
+        <tag>代码优化</tag>
+      </tags>
+  </entry>
 </search>
