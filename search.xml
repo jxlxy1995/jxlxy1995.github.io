@@ -657,8 +657,21 @@
 <p>第四个参数即为对线程函数所传的参数，这里需要注意不能传生命周期“过短”的临时值，即保证该对象or指针的销毁一定在线程销毁后。</p>
 <h2 id="join和detach"><a href="#join和detach" class="headerlink" title="join和detach"></a>join和detach</h2><figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">pthread_join (threadid, status) </span><br><span class="line">pthread_detach (threadid) </span><br></pre></td></tr></table></figure>
 <p><code>pthread_join()</code> 子程序阻碍调用程序，直到指定的 threadid 线程终止为止。当创建一个线程时，它的某个属性会定义它是否是可连接的（<code>joinable</code>）或可分离的（<code>detached</code>）。只有创建时定义为可连接的线程才可以被连接。如果线程创建时被定义为可分离的，则它永远也不能被连接。</p>
-<h1 id="2-总结"><a href="#2-总结" class="headerlink" title="2.总结"></a>2.总结</h1><p>…笔记文件在公司电脑，竟然没提交到印象笔记去。。。只能明天在提交了</p>
-<h1 id="3-参考文章"><a href="#3-参考文章" class="headerlink" title="3.参考文章"></a>3.参考文章</h1>]]></content>
+<h1 id="2-总结"><a href="#2-总结" class="headerlink" title="2.总结"></a>2.总结</h1><ol>
+<li><p>线程分两种：一种可以join，另一种不可以。该属性在创建线程的时候指定。 为了确保移植性，在创建线程时，最好显式指定其join或detach属性。似乎不是所有POSIX实现都是用joinable作默认。 </p>
+</li>
+<li><p>使用如下代码设置线程的joinable属性</p>
+<figure class="highlight c++"><table><tr><td class="code"><pre><span class="line">pthread_attr_init(&amp;attr);</span><br><span class="line">pthread_attr_setdetachstate(&amp;attr, PTHREAD_CREATE_JOINABLE);</span><br><span class="line"></span><br><span class="line">pthread_create(..);</span><br><span class="line"></span><br><span class="line">pthread_attr_destroy(&amp;attr);</span><br></pre></td></tr></table></figure></li>
+<li><p>在线程函数中退出时使用pthread_exit函数可以携带出返回值，但需注意一下几点：</p>
+</li>
+</ol>
+<ul>
+<li>传出的返回值必须是堆上内存，否则会在线程函数结束时被销毁掉；</li>
+<li>这个线程退出的返回值的格式是void*，无论是什么格式都要强转成<code>void*</code>才能返回出来主线程。且尽量不要使用类似<code>void* a = (void*)10</code>，否则传出后再转换的值大概率不对，这边测试下来一开始是什么传出就会被转成什么！</li>
+<li>接上条，由于一般需要在堆上申请内存传出值，故该段内存在主线程或者说调用<code>pthread_join</code>后使用完<strong>必须手动delete掉</strong>，否则会造成内存泄露</li>
+</ul>
+<h1 id="3-参考文章"><a href="#3-参考文章" class="headerlink" title="3.参考文章"></a>3.参考文章</h1><p><a href="https://www.runoob.com/cplusplus/cpp-multithreading.html">C++多线程</a></p>
+]]></content>
       <categories>
         <category>C++</category>
       </categories>
